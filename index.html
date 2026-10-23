@@ -1,0 +1,2823 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TokenPhysics — Interactive Tokenomics, Vesting Physics & Liquidity Stress Engine</title>
+  
+  <!-- CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <!-- Modern Editorial & FinTech Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            },
+            seed: {
+              light: '#fef3c7',
+              DEFAULT: '#f59e0b',
+              dark: '#b45309',
+            },
+            team: {
+              light: '#ffe4e6',
+              DEFAULT: '#f43f5e',
+              dark: '#be123c',
+            },
+            staking: {
+              light: '#dcfce7',
+              DEFAULT: '#10b981',
+              dark: '#047857',
+            },
+            publicCohort: {
+              light: '#e0f2fe',
+              DEFAULT: '#0284c7',
+              dark: '#0369a1',
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          boxShadow: {
+            subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+            card: '0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.03)',
+            elevation: '0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04)',
+            float: '0 20px 35px -5px rgba(0, 0, 0, 0.09), 0 10px 15px -5px rgba(0, 0, 0, 0.04)',
+            pill: '0 2px 5px rgba(0,0,0,0.06)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Premium FinTech Editorial Styling (Stripe / Linear / Apple Design Aesthetic) */
+    :root {
+      --bg-page: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --border-focus: #cbd5e1;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      letter-spacing: -0.011em;
+    }
+
+    /* Architectural grid background pattern */
+    .bg-grid-pattern {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(#e2e8f0 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* Polished FinTech Slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+      outline: none;
+      transition: background 0.2s;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #2563eb;
+      border: none;
+      transition: transform 0.1s, box-shadow 0.15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px #1d4ed8;
+    }
+    
+    .slider-seed::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #f59e0b; }
+    .slider-seed::-webkit-slider-thumb:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px #d97706; }
+
+    .slider-team::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #f43f5e; }
+    .slider-team::-webkit-slider-thumb:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px #e11d48; }
+
+    .slider-staking::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #10b981; }
+    .slider-staking::-webkit-slider-thumb:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px #059669; }
+
+    .slider-public::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 2px #0284c7; }
+    .slider-public::-webkit-slider-thumb:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px #0369a1; }
+
+    /* Polished Card Surface */
+    .pro-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pro-card:hover {
+      border-color: #cbd5e1;
+    }
+
+    /* Custom fine scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Presentation Mode toggle transitions */
+    .presentation-active #leftPanel {
+      display: none !important;
+    }
+    .presentation-active #centerPanel {
+      grid-column: span 7 / span 7;
+    }
+    .presentation-active #rightPanel {
+      grid-column: span 5 / span 5;
+    }
+    @media (max-width: 1280px) {
+      .presentation-active #centerPanel,
+      .presentation-active #rightPanel {
+        grid-column: span 12 / span 12;
+      }
+    }
+
+    /* Toast notification */
+    #toastNotice {
+      transform: translateY(120%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #toastNotice.show {
+      transform: translateY(0);
+    }
+
+    /* Professional Print / PDF Stylesheet */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm 14mm 14mm 14mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      header,
+      section:not(#printReportContainer),
+      aside,
+      main,
+      #memoModal,
+      #toastNotice,
+      .no-print {
+        display: none !important;
+      }
+      #printReportContainer {
+        display: block !important;
+      }
+      .page-break-inside-avoid {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      .page-break-before {
+        break-before: page !important;
+        page-break-before: always !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-grid-pattern antialiased text-slate-800">
+
+  <!-- ========================================================================= -->
+  <!-- 1. HEADER: BRAND, PRESETS, SHARING & GLOBAL ACTIONS                       -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-subtle px-4 lg:px-8 py-3">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Product Title -->
+      <div class="flex items-center space-x-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-sky-500 p-0.5 shadow-md flex items-center justify-center">
+          <div class="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
+            <i class="fa-solid fa-shapes text-brand-600 text-lg"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-lg font-extrabold tracking-tight text-slate-900">TokenPhysics</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200/80">
+              Institutional Pro
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium">Interactive Tokenomics, Vesting Physics & Liquidity Stress Engine</p>
+        </div>
+      </div>
+
+      <!-- Presets Segmented Selector -->
+      <div class="flex items-center p-1 bg-slate-100/90 border border-slate-200 rounded-xl overflow-x-auto max-w-full">
+        <span class="text-xs font-semibold text-slate-500 px-2.5 flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-layer-group text-slate-400 text-xs"></i>
+          <span>Scenarios:</span>
+        </span>
+        <div class="flex items-center space-x-1" id="presetButtonsGroup">
+          <button id="presetSustainable" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-white text-slate-900 shadow-pill border border-slate-200/60 whitespace-nowrap">
+            Arbitrum-style Drip
+          </button>
+          <button id="presetBalanced" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60 whitespace-nowrap">
+            Balanced VC L1
+          </button>
+          <button id="presetDump" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-600 hover:text-rose-700 hover:bg-white/60 whitespace-nowrap">
+            Predatory Low Float
+          </button>
+          <button id="presetFair" class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60 whitespace-nowrap">
+            Fair Launch 35% Float
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2.5">
+        
+        <!-- Copy Model Link -->
+        <button id="btnShareLink" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition" title="Copy shareable link with current tokenomics parameters">
+          <i class="fa-solid fa-link text-slate-500 text-xs"></i>
+          <span>Share Link</span>
+        </button>
+
+        <!-- View Ledger Table -->
+        <button id="btnToggleLedger" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition" title="Toggle 48-Month Numerical Schedule">
+          <i class="fa-solid fa-table-list text-slate-500 text-xs"></i>
+          <span>Schedule Table</span>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button id="btnSoundToggle" class="px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition" title="Toggle audio feedback">
+          <i id="soundIcon" class="fa-solid fa-volume-high text-slate-600"></i>
+        </button>
+
+        <!-- Presentation Mode -->
+        <button id="btnPresentation" class="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition">
+          <i class="fa-solid fa-expand text-slate-600"></i>
+          <span>Pitch Mode</span>
+        </button>
+        
+        <!-- Export Pitch Memo -->
+        <button id="btnExportMemo" class="flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow transition-transform active:scale-95">
+          <i class="fa-solid fa-file-arrow-down text-white"></i>
+          <span>Export VC Memo</span>
+        </button>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. GLOBAL METRICS RIBBON (INSTITUTIONAL HUD)                              -->
+  <!-- ========================================================================= -->
+  <section class="border-b border-slate-200 bg-white px-4 lg:px-8 py-3 shadow-subtle">
+    <div class="max-w-[1920px] mx-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      
+      <!-- Metric 1: Fully Diluted Valuation -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Fully Diluted Val</span>
+          <i class="fa-solid fa-globe text-brand-500 text-xs"></i>
+        </span>
+        <div class="flex items-baseline space-x-1.5 mt-1">
+          <span id="metricFDV" class="font-mono text-lg font-bold text-slate-900 tracking-tight">$500,000,000</span>
+          <span class="text-[10px] text-slate-400 font-mono">USD</span>
+        </div>
+      </div>
+
+      <!-- Metric 2: Day-1 Circulating Float -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Day-1 Market Cap</span>
+          <i class="fa-solid fa-rocket text-indigo-500 text-xs"></i>
+        </span>
+        <div class="flex items-baseline space-x-1 mt-1">
+          <span id="metricDay1Cap" class="font-mono text-lg font-bold text-slate-900 tracking-tight">$37,500,000</span>
+          <span id="metricFloatPct" class="text-[11px] text-brand-600 font-mono font-semibold ml-1">(7.5%)</span>
+        </div>
+      </div>
+
+      <!-- Metric 3: Peak Monthly Unlock -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Peak Monthly Unlock</span>
+          <i class="fa-solid fa-bolt text-amber-500 text-xs"></i>
+        </span>
+        <div class="flex items-baseline space-x-1.5 mt-1">
+          <span id="metricPeakUnlock" class="font-mono text-lg font-bold text-amber-700 tracking-tight">$14,250,000</span>
+          <span id="metricPeakMonth" class="text-[11px] text-slate-500 font-mono">@ Mo. 6</span>
+        </div>
+      </div>
+
+      <!-- Metric 4: Max Price Slippage Risk -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Max Slippage Impact</span>
+          <i class="fa-solid fa-chart-line-down text-rose-500 text-xs"></i>
+        </span>
+        <div class="flex items-baseline space-x-1.5 mt-1">
+          <span id="metricMaxSlippage" class="font-mono text-lg font-bold text-rose-600 tracking-tight">18.4%</span>
+          <span class="text-[10px] text-slate-500 font-mono">AMM drop</span>
+        </div>
+      </div>
+
+      <!-- Metric 5: Seed Investor Paper Multiple -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Seed Paper ROI</span>
+          <i class="fa-solid fa-coins text-amber-600 text-xs"></i>
+        </span>
+        <div class="flex items-baseline space-x-1 mt-1">
+          <span id="metricSeedROI" class="font-mono text-lg font-bold text-emerald-700 tracking-tight">10.0x</span>
+          <span class="text-[10px] text-slate-500 font-mono">($0.05 in)</span>
+        </div>
+      </div>
+
+      <!-- Metric 6: Liquidity Health Status -->
+      <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl px-3.5 py-2.5 flex flex-col justify-between">
+        <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-500 flex items-center justify-between">
+          <span>Health Grade</span>
+          <i class="fa-solid fa-shield-halved text-emerald-600 text-xs"></i>
+        </span>
+        <div class="flex items-center space-x-2 mt-1">
+          <span id="healthBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            STABLE (GRADE A)
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MAIN WORKSPACE VIEWPORT                                                -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 max-w-[1920px] w-full mx-auto p-4 lg:p-6 grid grid-cols-12 gap-5 items-start">
+    
+    <!-- ======================================================================= -->
+    <!-- B. LEFT PANEL: RIGOROUS QUANTITATIVE TOKENOMICS CONTROLS                -->
+    <!-- ======================================================================= -->
+    <aside id="leftPanel" class="col-span-12 xl:col-span-3 space-y-4">
+      
+      <!-- Card 1: Supply & Valuation -->
+      <div class="pro-card p-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-coins text-brand-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">1. Supply & Capitalization</h2>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Core Setup</span>
+        </div>
+
+        <div class="mt-3.5 space-y-3.5">
+          <!-- Total Supply -->
+          <div>
+            <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
+              <span>Total Token Supply</span>
+              <span id="displayTotalSupply" class="font-mono text-brand-700 font-bold">1,000,000,000</span>
+            </div>
+            <input type="range" id="inputTotalSupply" min="10000000" max="10000000000" step="10000000" value="1000000000" class="w-full slider-public">
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-0.5">
+              <span>10M</span>
+              <span>1B</span>
+              <span>10B</span>
+            </div>
+          </div>
+
+          <!-- Listing Price -->
+          <div>
+            <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
+              <span>Listing TGE Price ($ USD)</span>
+              <span id="displayPrice" class="font-mono text-emerald-700 font-bold">$0.50</span>
+            </div>
+            <input type="range" id="inputPrice" min="0.01" max="5.00" step="0.01" value="0.50" class="w-full slider-staking">
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-0.5">
+              <span>$0.01</span>
+              <span>$1.00</span>
+              <span>$5.00</span>
+            </div>
+          </div>
+
+          <!-- Seed Entry Price (For ROI Multiple) -->
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span class="text-slate-600 font-medium">Seed Round Entry Price:</span>
+            <div class="flex items-center space-x-1">
+              <span class="text-slate-400 text-xs">$</span>
+              <input type="number" id="inputSeedEntryPrice" step="0.005" min="0.001" max="5" value="0.05" class="w-20 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-slate-800 font-mono text-xs text-right focus:bg-white focus:border-brand-500 focus:outline-none">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card 2: Cohort Allocations & Vesting Mechanics -->
+      <div class="pro-card p-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-chart-pie text-indigo-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">2. Cohorts & Vesting Terms</h2>
+          </div>
+          <!-- Allocation balance badge -->
+          <div id="allocSumBadge" class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            Total: 100%
+          </div>
+        </div>
+
+        <!-- Allocation warning if != 100% -->
+        <div id="allocWarning" class="hidden mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-[11px] text-amber-800 flex items-center justify-between">
+          <span class="font-medium"><i class="fa-solid fa-triangle-exclamation mr-1.5 text-amber-600"></i>Allocations must equal 100%</span>
+          <button id="btnNormalizeAlloc" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition">Normalize</button>
+        </div>
+
+        <div class="mt-3.5 space-y-3.5">
+          
+          <!-- COHORT A: SEED INVESTORS -->
+          <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-200/80 hover:border-amber-300 transition">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-seed ring-4 ring-amber-100"></span>
+                <span class="text-xs font-bold text-amber-900">Seed Investors</span>
+              </div>
+              <span id="dispSeedAlloc" class="text-xs font-mono font-bold text-amber-700">15%</span>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+              <input type="range" id="inputSeedAlloc" min="0" max="50" step="1" value="15" class="w-full slider-seed">
+
+              <div class="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">TGE Unlock</label>
+                  <div class="flex items-center mt-0.5">
+                    <input type="number" id="numSeedTge" min="0" max="100" value="10" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                    <span class="ml-1 text-slate-400 text-[10px]">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Cliff (mo)</label>
+                  <input type="number" id="numSeedCliff" min="0" max="36" value="6" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Vesting (mo)</label>
+                  <input type="number" id="numSeedVest" min="1" max="48" value="18" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COHORT B: CORE TEAM & ADVISORS -->
+          <div class="p-3 rounded-xl bg-rose-50/50 border border-rose-200/80 hover:border-rose-300 transition">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-team ring-4 ring-rose-100"></span>
+                <span class="text-xs font-bold text-rose-900">Core Team & Advisors</span>
+              </div>
+              <span id="dispTeamAlloc" class="text-xs font-mono font-bold text-rose-700">20%</span>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+              <input type="range" id="inputTeamAlloc" min="0" max="50" step="1" value="20" class="w-full slider-team">
+
+              <div class="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">TGE Unlock</label>
+                  <div class="flex items-center mt-0.5">
+                    <input type="number" id="numTeamTge" min="0" max="100" value="0" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                    <span class="ml-1 text-slate-400 text-[10px]">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Cliff (mo)</label>
+                  <input type="number" id="numTeamCliff" min="0" max="36" value="12" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Vesting (mo)</label>
+                  <input type="number" id="numTeamVest" min="1" max="48" value="24" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COHORT C: STAKING & COMMUNITY REWARDS -->
+          <div class="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/80 hover:border-emerald-300 transition">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-staking ring-4 ring-emerald-100"></span>
+                <span class="text-xs font-bold text-emerald-900">Staking & Community</span>
+              </div>
+              <span id="dispStakingAlloc" class="text-xs font-mono font-bold text-emerald-700">40%</span>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+              <input type="range" id="inputStakingAlloc" min="0" max="70" step="1" value="40" class="w-full slider-staking">
+
+              <div class="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">TGE Unlock</label>
+                  <div class="flex items-center mt-0.5">
+                    <input type="number" id="numStakingTge" min="0" max="100" value="5" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                    <span class="ml-1 text-slate-400 text-[10px]">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Cliff (mo)</label>
+                  <input type="number" id="numStakingCliff" min="0" max="36" value="0" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Drip (mo)</label>
+                  <input type="number" id="numStakingVest" min="1" max="48" value="36" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COHORT D: PUBLIC & LIQUIDITY -->
+          <div class="p-3 rounded-xl bg-sky-50/50 border border-sky-200/80 hover:border-sky-300 transition">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-publicCohort ring-4 ring-sky-100"></span>
+                <span class="text-xs font-bold text-sky-900">Public & DEX Float</span>
+              </div>
+              <span id="dispPublicAlloc" class="text-xs font-mono font-bold text-sky-700">25%</span>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+              <input type="range" id="inputPublicAlloc" min="0" max="50" step="1" value="25" class="w-full slider-public">
+
+              <div class="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">TGE Unlock</label>
+                  <div class="flex items-center mt-0.5">
+                    <input type="number" id="numPublicTge" min="0" max="100" value="40" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                    <span class="ml-1 text-slate-400 text-[10px]">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Cliff (mo)</label>
+                  <input type="number" id="numPublicCliff" min="0" max="36" value="0" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+                <div>
+                  <label class="block text-slate-500 text-[10px] font-medium">Vesting (mo)</label>
+                  <input type="number" id="numPublicVest" min="1" max="48" value="12" class="mt-0.5 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-center text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card 3: AMM Liquidity & Sell Propensities -->
+      <div class="pro-card p-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-water-ladder text-sky-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">3. AMM Pool & Sell Pressure</h2>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Depth</span>
+        </div>
+
+        <div class="mt-3.5 space-y-3.5">
+          <!-- DEX Pool Depth -->
+          <div>
+            <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
+              <span>DEX Liquidity Pool Depth</span>
+              <span id="displayPoolDepth" class="font-mono text-sky-700 font-bold">$10,000,000</span>
+            </div>
+            <input type="range" id="inputPoolDepth" min="500000" max="50000000" step="500000" value="10000000" class="w-full slider-public">
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-0.5">
+              <span>$500K</span>
+              <span>$10M</span>
+              <span>$50M</span>
+            </div>
+          </div>
+
+          <!-- Daily Organic Buy Support -->
+          <div>
+            <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
+              <span>Daily Organic Buy Depth ($/day)</span>
+              <span id="displayBuySupport" class="font-mono text-emerald-700 font-bold">$350,000</span>
+            </div>
+            <input type="range" id="inputBuySupport" min="20000" max="2000000" step="20000" value="350000" class="w-full slider-staking">
+          </div>
+
+          <!-- Cohort Dump Propensities -->
+          <div class="pt-2.5 border-t border-slate-100">
+            <span class="text-xs font-bold text-slate-800 block mb-2">Sell Dump Propensity On Unlock:</span>
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <span class="text-amber-800 block font-semibold">Seed Dump %</span>
+                <input type="number" id="propSeed" min="0" max="100" value="85" class="mt-1 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-xs">
+              </div>
+              <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <span class="text-rose-800 block font-semibold">Team Dump %</span>
+                <input type="number" id="propTeam" min="0" max="100" value="20" class="mt-1 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-xs">
+              </div>
+              <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <span class="text-emerald-800 block font-semibold">Staking Dump %</span>
+                <input type="number" id="propStaking" min="0" max="100" value="30" class="mt-1 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-xs">
+              </div>
+              <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <span class="text-sky-800 block font-semibold">Public Dump %</span>
+                <input type="number" id="propPublic" min="0" max="100" value="65" class="mt-1 w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-mono text-xs">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ======================================================================= -->
+    <!-- C. CENTER: BESPOKE MATTER.JS PHYSICS RESERVOIR                         -->
+    <!-- ======================================================================= -->
+    <section id="centerPanel" class="col-span-12 xl:col-span-5 space-y-4">
+      
+      <!-- Physics Container Card -->
+      <div class="pro-card shadow-elevation overflow-hidden flex flex-col">
+        
+        <!-- Controls Bar Above Chamber -->
+        <div class="p-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          
+          <!-- Month Timeline Scrub & Player -->
+          <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
+            <button id="btnPlayPause" class="w-8 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center font-bold transition shadow-sm active:scale-95">
+              <i id="playIcon" class="fa-solid fa-play text-xs"></i>
+            </button>
+            <button id="btnResetTimeline" class="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition" title="Reset to Month 0">
+              <i class="fa-solid fa-rotate-left text-xs"></i>
+            </button>
+            
+            <div class="flex-1 flex flex-col justify-center px-2">
+              <div class="flex justify-between items-center text-[11px] mb-1">
+                <span class="text-slate-600 font-medium">Timeline Progression:</span>
+                <span id="displayMonthBadge" class="font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                  Month 0 (TGE)
+                </span>
+              </div>
+              <input type="range" id="timelineSlider" min="0" max="48" step="1" value="0" class="w-full slider-public">
+            </div>
+          </div>
+
+          <!-- Secondary Physics Actions -->
+          <div class="flex items-center space-x-1.5">
+            <button id="btnInjectOrbs" title="Spawn tokens into upper reservoir" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-semibold flex items-center space-x-1 transition shadow-subtle">
+              <i class="fa-solid fa-cloud-arrow-down text-brand-600 text-xs"></i>
+              <span>Inject</span>
+            </button>
+
+            <button id="btnAgitate" title="Agitate reservoir if orbs settle" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-amber-700 text-xs font-semibold flex items-center space-x-1 transition shadow-subtle">
+              <i class="fa-solid fa-hand-fist text-amber-500 text-xs"></i>
+              <span>Agitate</span>
+            </button>
+
+            <button id="btnEmergencyFlush" title="Emergency open valve completely" class="px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-300 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center space-x-1 transition shadow-subtle">
+              <i class="fa-solid fa-burst text-rose-600 text-xs"></i>
+              <span>Flush</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- The Matter.js Canvas Area -->
+        <div class="relative w-full h-[580px] bg-gradient-to-b from-slate-50 via-white to-slate-100 flex items-center justify-center select-none overflow-hidden border-b border-slate-200" id="canvasContainer">
+          
+          <!-- Upper Reservoir Chamber HUD -->
+          <div class="absolute top-3 left-4 z-10 pointer-events-none flex flex-col space-y-1">
+            <div class="flex items-center space-x-1.5 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-200 shadow-subtle">
+              <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+              <span class="text-[11px] font-mono text-slate-700 font-semibold uppercase tracking-wider">Locked Reservoir Chamber</span>
+            </div>
+            <span id="reservoirTokenCount" class="text-xs font-mono text-slate-500 pl-1 font-medium">110 Locked Tokens</span>
+          </div>
+
+          <!-- Aperture Valve Indicator -->
+          <div class="absolute top-[48%] right-4 z-10 pointer-events-none bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-200 shadow-subtle flex items-center space-x-2">
+            <i class="fa-solid fa-gauge-simple text-xs text-amber-600"></i>
+            <span class="text-[11px] font-mono text-slate-600">Valve Aperture:</span>
+            <span id="valveStatusText" class="text-[11px] font-mono font-bold text-slate-700">CLOSED (0%)</span>
+          </div>
+
+          <!-- Market Sink / AMM Floor HUD -->
+          <div class="absolute bottom-3 left-4 z-10 pointer-events-none flex flex-col space-y-1">
+            <div class="flex items-center space-x-1.5 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-200 shadow-subtle">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span class="text-[11px] font-mono text-slate-800 font-semibold uppercase tracking-wider">AMM / Market Order Book Sink</span>
+            </div>
+            <div class="flex items-center space-x-3 text-xs font-mono text-slate-600 pl-1 font-medium">
+              <span id="sinkTokenCount">Drained: 0 Orbs</span>
+              <span>•</span>
+              <span id="sinkSlippageFlash" class="text-emerald-700 font-semibold">Price Impact: 0.0%</span>
+            </div>
+          </div>
+
+          <!-- Interactive Hint -->
+          <div class="absolute top-3 right-4 z-10 pointer-events-none text-[11px] text-slate-400 font-mono bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+            <i class="fa-solid fa-arrow-pointer mr-1 text-slate-400"></i> Drag & Throw Orbs
+          </div>
+
+          <!-- Canvas is attached here by Matter.js -->
+        </div>
+
+        <!-- Cohort Legend with Monospace markers -->
+        <div class="p-3 bg-white grid grid-cols-4 gap-2 text-center text-xs border-t border-slate-100">
+          <div class="flex items-center justify-center space-x-1.5 text-amber-800 font-mono font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-seed border border-amber-600"></span>
+            <span>Seed (S)</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1.5 text-rose-800 font-mono font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-team border border-rose-600"></span>
+            <span>Team (T)</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1.5 text-emerald-800 font-mono font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-staking border border-emerald-600"></span>
+            <span>Staking (K)</span>
+          </div>
+          <div class="flex items-center justify-center space-x-1.5 text-sky-800 font-mono font-medium">
+            <span class="w-2.5 h-2.5 rounded-full bg-publicCohort border border-sky-600"></span>
+            <span>Public (P)</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- D. RIGHT PANEL: CHART.JS & DEFENSIVE FINANCIAL AUDIT                   -->
+    <!-- ======================================================================= -->
+    <section id="rightPanel" class="col-span-12 xl:col-span-4 space-y-4">
+      
+      <!-- Chart 1: 48-Month Cumulative Vesting Chart -->
+      <div class="pro-card p-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-chart-area text-brand-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">Circulating Supply Projection</h2>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">48-Month Stacked</span>
+        </div>
+
+        <div class="mt-3 relative h-52 w-full">
+          <canvas id="chartCirculatingSupply"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Monthly Sell Pressure vs. Absorption Capacity -->
+      <div class="pro-card p-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-chart-column text-rose-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">Sell Pressure vs. Absorption</h2>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">$ USD Volume</span>
+        </div>
+
+        <div class="mt-3 relative h-48 w-full">
+          <canvas id="chartSellPressure"></canvas>
+        </div>
+      </div>
+
+      <!-- Financial Stress Test & Audit Gauge -->
+      <div class="pro-card p-4 space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-heart-pulse text-emerald-600 text-sm"></i>
+            <h2 class="text-xs font-bold tracking-tight text-slate-900 uppercase">Institutional Stress Audit</h2>
+          </div>
+          <span id="auditScoreBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+            Health: 88/100
+          </span>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Required Daily Vol:</span>
+            <span id="metricReqVolume" class="font-mono text-sm font-bold text-slate-900 mt-0.5 block">$475,000</span>
+            <span class="text-[10px] text-slate-400 font-mono">to absorb organic sell drip</span>
+          </div>
+
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-[10px] uppercase font-bold text-slate-500 block">Peak Depth Multiple:</span>
+            <span id="metricDepthMultiple" class="font-mono text-sm font-bold text-amber-700 mt-0.5 block">1.42x Depth</span>
+            <span class="text-[10px] text-slate-400 font-mono">Unlock vs. DEX Pool</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Risk Warning Box -->
+        <div id="riskWarningBox" class="p-3.5 rounded-xl border transition-all text-xs flex items-start space-x-2.5 bg-emerald-50 border-emerald-200 text-emerald-900">
+          <i id="riskWarningIcon" class="fa-solid fa-circle-check text-emerald-600 text-base mt-0.5"></i>
+          <div class="flex-1">
+            <span id="riskWarningTitle" class="font-bold block text-[12px] text-emerald-950">Healthy Emission Curve</span>
+            <p id="riskWarningDesc" class="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+              Monthly unlocks do not exceed organic absorption capacity. Estimated price slip remains below defensible institutional thresholds (&lt; 20%).
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 4. EXPANDABLE 48-MONTH LEDGER TABLE (FOR REAL WORK & EXCEL EXPORTS)       -->
+  <!-- ========================================================================= -->
+  <section id="ledgerSection" class="hidden border-t border-slate-200 bg-white px-4 lg:px-8 py-6">
+    <div class="max-w-[1920px] mx-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">48-Month Vesting & Liquidity Ledger</h3>
+          <p class="text-xs text-slate-500">Granular month-by-month token releases, sell volumes, and AMM impact.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btnDownloadCSV" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 border border-slate-200 transition">
+            <i class="fa-solid fa-file-csv text-emerald-600"></i>
+            <span>Download CSV for Excel</span>
+          </button>
+          <button id="btnCloseLedger" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+            <i class="fa-solid fa-xmark"></i> Close Table
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-96 overflow-y-auto">
+        <table class="w-full text-left text-xs" id="ledgerTable">
+          <thead class="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200 font-semibold font-mono">
+            <tr>
+              <th class="p-2.5">Month</th>
+              <th class="p-2.5">Seed Unlock</th>
+              <th class="p-2.5">Team Unlock</th>
+              <th class="p-2.5">Staking Unlock</th>
+              <th class="p-2.5">Public Unlock</th>
+              <th class="p-2.5">Total Unlocked</th>
+              <th class="p-2.5">Cumulative Float %</th>
+              <th class="p-2.5">Est. Sell Volume ($)</th>
+              <th class="p-2.5">AMM Price Impact</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-mono text-slate-700" id="ledgerTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 5. EXPORT PITCH MEMO MODAL (REAL WORLD VC READY)                          -->
+  <!-- ========================================================================= -->
+  <div id="memoModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-2xl w-full rounded-2xl border border-slate-200 shadow-float p-6 relative max-h-[92vh] overflow-y-auto">
+      
+      <button id="btnCloseModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg border border-brand-200">
+          <i class="fa-solid fa-file-contract"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Institutional Tokenomics Memo</h3>
+          <p class="text-xs text-slate-500">Quantitative audit memorandum formatted for launchpads & venture partners</p>
+        </div>
+      </div>
+
+      <div id="memoContent" class="space-y-4 text-xs text-slate-700 border-t border-b border-slate-100 py-4 font-mono">
+        <!-- Injected dynamically -->
+      </div>
+
+      <div class="mt-4 flex items-center justify-end space-x-3">
+        <button id="btnDownloadJSON" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i class="fa-solid fa-code text-slate-500"></i>
+          <span>Export JSON</span>
+        </button>
+        <button id="btnPrintMemo" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i class="fa-solid fa-print text-slate-500"></i>
+          <span>Print / PDF</span>
+        </button>
+        <button id="btnDownloadHTML" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
+          <i class="fa-solid fa-download"></i>
+          <span>Download HTML Memo</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- DEDICATED INSTITUTIONAL PRINT REPORT (FOR PRINT / PDF GENERATION)          -->
+  <!-- ========================================================================= -->
+  <div id="printReportContainer" class="hidden bg-white text-slate-900 p-8 max-w-5xl mx-auto">
+    <!-- Populated dynamically right before printing or export -->
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotice" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-elevation text-xs font-medium flex items-center space-x-2">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMessage">Link copied to clipboard!</span>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT APPLICATION CORE ENGINE                                        -->
+  <!-- ========================================================================= -->
+  <script>
+    /**
+     * TokenPhysics: Interactive Tokenomics & Vesting Physics Engine
+     * Light bright modern FinTech aesthetic.
+     */
+    (function () {
+      'use strict';
+
+      // -----------------------------------------------------------------------
+      // 1. STATE & MODEL PARAMETERS
+      // -----------------------------------------------------------------------
+      const state = {
+        // Valuation & Supply
+        totalSupply: 1000000000,
+        price: 0.50,
+        seedEntryPrice: 0.05,
+        
+        // Cohorts
+        cohorts: {
+          seed: {
+            name: 'Seed Investors',
+            color: '#f59e0b',
+            stroke: '#d97706',
+            alloc: 15,
+            tge: 10,
+            cliff: 6,
+            vest: 18,
+            dumpProp: 85,
+            key: 'S'
+          },
+          team: {
+            name: 'Core Team & Advisors',
+            color: '#f43f5e',
+            stroke: '#e11d48',
+            alloc: 20,
+            tge: 0,
+            cliff: 12,
+            vest: 24,
+            dumpProp: 20,
+            key: 'T'
+          },
+          staking: {
+            name: 'Staking & Rewards',
+            color: '#10b981',
+            stroke: '#059669',
+            alloc: 40,
+            tge: 5,
+            cliff: 0,
+            vest: 36,
+            dumpProp: 30,
+            key: 'K'
+          },
+          public: {
+            name: 'Public & DEX Float',
+            color: '#0284c7',
+            stroke: '#0369a1',
+            alloc: 25,
+            tge: 40,
+            cliff: 0,
+            vest: 12,
+            dumpProp: 65,
+            key: 'P'
+          }
+        },
+
+        // Liquidity / AMM
+        poolDepth: 10000000, // $10M DEX pool
+        dailyBuySupport: 350000, // $350K/day
+        
+        // Simulation Runtime
+        currentMonth: 0,
+        isPlaying: false,
+        playInterval: null,
+        playSpeed: 950,
+        presentationMode: false
+      };
+
+      // Toast Helper
+      function showToast(msg) {
+        const toast = document.getElementById('toastNotice');
+        const text = document.getElementById('toastMessage');
+        text.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2800);
+      }
+
+      // -----------------------------------------------------------------------
+      // 2. MATHEMATICAL TOKENOMICS ENGINE
+      // -----------------------------------------------------------------------
+      function calculateVestingSchedule() {
+        const months = 48;
+        const schedule = [];
+        const totalTokens = state.totalSupply;
+        const cohortData = {};
+
+        for (const [key, cohort] of Object.entries(state.cohorts)) {
+          const cohortSupply = totalTokens * (cohort.alloc / 100);
+          const tgeTokens = cohortSupply * (cohort.tge / 100);
+          const remainingTokens = cohortSupply - tgeTokens;
+          const monthlyVestingRate = cohort.vest > 0 ? remainingTokens / cohort.vest : 0;
+
+          cohortData[key] = {
+            cohortSupply,
+            tgeTokens,
+            remainingTokens,
+            monthlyVestingRate,
+            cliff: cohort.cliff,
+            vest: cohort.vest,
+            dumpProp: cohort.dumpProp / 100
+          };
+        }
+
+        let cumCirculating = 0;
+        let cumSeed = 0;
+        let cumTeam = 0;
+        let cumStaking = 0;
+        let cumPublic = 0;
+
+        for (let m = 0; m <= months; m++) {
+          let deltaSeed = 0;
+          let deltaTeam = 0;
+          let deltaStaking = 0;
+          let deltaPublic = 0;
+
+          if (m === 0) {
+            deltaSeed = cohortData.seed.tgeTokens;
+            deltaTeam = cohortData.team.tgeTokens;
+            deltaStaking = cohortData.staking.tgeTokens;
+            deltaPublic = cohortData.public.tgeTokens;
+          } else {
+            if (m > cohortData.seed.cliff && m <= cohortData.seed.cliff + cohortData.seed.vest) {
+              deltaSeed = cohortData.seed.monthlyVestingRate;
+            }
+            if (m > cohortData.team.cliff && m <= cohortData.team.cliff + cohortData.team.vest) {
+              deltaTeam = cohortData.team.monthlyVestingRate;
+            }
+            if (m > cohortData.staking.cliff && m <= cohortData.staking.cliff + cohortData.staking.vest) {
+              deltaStaking = cohortData.staking.monthlyVestingRate;
+            }
+            if (m > cohortData.public.cliff && m <= cohortData.public.cliff + cohortData.public.vest) {
+              deltaPublic = cohortData.public.monthlyVestingRate;
+            }
+          }
+
+          cumSeed += deltaSeed;
+          cumTeam += deltaTeam;
+          cumStaking += deltaStaking;
+          cumPublic += deltaPublic;
+
+          const totalDelta = deltaSeed + deltaTeam + deltaStaking + deltaPublic;
+          cumCirculating += totalDelta;
+
+          // Projected sell pressure in USD
+          const sellTokens = (deltaSeed * cohortData.seed.dumpProp) +
+                             (deltaTeam * cohortData.team.dumpProp) +
+                             (deltaStaking * cohortData.staking.dumpProp) +
+                             (deltaPublic * cohortData.public.dumpProp);
+          
+          const monthlySellUSD = sellTokens * state.price;
+
+          // Constant-product AMM slippage: ΔP = ΔUSD / (y_0 + ΔUSD)
+          const poolQuoteDepth = Math.max(state.poolDepth / 2, 10000);
+          const priceImpactPct = (monthlySellUSD / (poolQuoteDepth + monthlySellUSD)) * 100;
+          const monthlyAbsorptionUSD = state.dailyBuySupport * 30;
+
+          schedule.push({
+            month: m,
+            deltaSeed,
+            deltaTeam,
+            deltaStaking,
+            deltaPublic,
+            totalDelta,
+            cumSeed,
+            cumTeam,
+            cumStaking,
+            cumPublic,
+            cumCirculating,
+            pctCirculating: (cumCirculating / totalTokens) * 100,
+            monthlySellUSD,
+            monthlyAbsorptionUSD,
+            priceImpactPct
+          });
+        }
+
+        return schedule;
+      }
+
+      function computeMetrics(schedule) {
+        const fdv = state.totalSupply * state.price;
+        const day1Unlocked = schedule[0].cumCirculating;
+        const day1Cap = day1Unlocked * state.price;
+        const floatPct = (day1Unlocked / state.totalSupply) * 100;
+
+        let peakUnlockUSD = 0;
+        let peakMonth = 0;
+        let maxPriceImpact = 0;
+
+        for (let i = 0; i < schedule.length; i++) {
+          const item = schedule[i];
+          if (item.monthlySellUSD > peakUnlockUSD) {
+            peakUnlockUSD = item.monthlySellUSD;
+            peakMonth = item.month;
+          }
+          if (item.priceImpactPct > maxPriceImpact) {
+            maxPriceImpact = item.priceImpactPct;
+          }
+        }
+
+        const requiredDailyVolume = (peakUnlockUSD / 30) / 0.15;
+        const depthMultiple = peakUnlockUSD / Math.max(state.poolDepth, 1);
+        const seedMultiple = state.price / Math.max(state.seedEntryPrice, 0.0001);
+
+        // Audit score (0 - 100)
+        let auditScore = 100;
+        if (floatPct < 5) auditScore -= 14;
+        if (floatPct > 35) auditScore -= 8;
+        if (maxPriceImpact > 15) auditScore -= Math.min(35, (maxPriceImpact - 15) * 1.5);
+        if (depthMultiple > 1.4) auditScore -= 20;
+        if (depthMultiple > 3.0) auditScore -= 25;
+        auditScore = Math.max(10, Math.min(99, Math.round(auditScore)));
+
+        return {
+          fdv,
+          day1Cap,
+          floatPct,
+          peakUnlockUSD,
+          peakMonth,
+          maxPriceImpact,
+          requiredDailyVolume,
+          depthMultiple,
+          seedMultiple,
+          auditScore
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // 3. MATTER.JS PHYSICS RESERVOIR (LIGHT & AIRY ACRYLIC AESTHETIC)
+      // -----------------------------------------------------------------------
+      let engine, world, render, runner;
+      let leftValveGate, rightValveGate;
+      let reservoirComposite;
+      let orbs = [];
+      let canvasWidth = 500;
+      let canvasHeight = 580;
+      let isAgitating = false;
+      let audioCtx = null;
+      let soundEnabled = true;
+
+      function playTone(freq, type, duration, vol) {
+        if (!soundEnabled) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type || 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(vol || 0.03, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (duration || 0.1));
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + (duration || 0.1));
+        } catch (e) {}
+      }
+
+      function initPhysics() {
+        const container = document.getElementById('canvasContainer');
+        canvasWidth = container.clientWidth || 500;
+        canvasHeight = container.clientHeight || 580;
+
+        engine = Matter.Engine.create({ enableSleeping: false });
+        world = engine.world;
+        world.gravity.y = 0.95;
+
+        render = Matter.Render.create({
+          element: container,
+          engine: engine,
+          options: {
+            width: canvasWidth,
+            height: canvasHeight,
+            wireframes: false,
+            background: 'transparent',
+            showSleeping: false,
+            showVelocity: false
+          }
+        });
+
+        Matter.Render.run(render);
+        runner = Matter.Runner.create();
+        Matter.Runner.run(runner, engine);
+
+        buildChamberWalls();
+
+        // Mouse Drag & Throw
+        const mouse = Matter.Mouse.create(render.canvas);
+        const mouseConstraint = Matter.MouseConstraint.create(engine, {
+          mouse: mouse,
+          constraint: {
+            stiffness: 0.25,
+            render: {
+              visible: true,
+              type: 'line',
+              lineWidth: 1.5,
+              strokeStyle: 'rgba(37, 99, 235, 0.45)'
+            }
+          }
+        });
+        Matter.Composite.add(world, mouseConstraint);
+        render.mouse = mouse;
+
+        // Custom canvas render pass: Bright, crisp orbs with cohort lettering and soft drop-shadow
+        Matter.Events.on(render, 'afterRender', function () {
+          const ctx = render.context;
+          if (!ctx) return;
+
+          for (let i = 0; i < orbs.length; i++) {
+            const body = orbs[i];
+            if (!body || !body.position) continue;
+
+            const { x, y } = body.position;
+            const r = body.circleRadius || 12;
+
+            ctx.save();
+            // Crisp outline
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Cohort Glyphs (S, T, K, P) in bold white
+            ctx.font = `bold ${Math.max(9, Math.round(r * 0.9))}px "JetBrains Mono", monospace`;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(body.cohortKey || 'T', x, y + 0.5);
+            ctx.restore();
+          }
+
+          // Aperture ring visualization
+          const neckY = canvasHeight * 0.48;
+          ctx.save();
+          ctx.strokeStyle = currentApertureOpening > 0 ? 'rgba(244, 63, 94, 0.85)' : 'rgba(217, 119, 6, 0.6)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(canvasWidth / 2, neckY + 12, 16, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        // Collision: Market Sink Detection
+        Matter.Events.on(engine, 'collisionStart', function (event) {
+          const pairs = event.pairs;
+          for (let i = 0; i < pairs.length; i++) {
+            const pair = pairs[i];
+            const isSinkHit = (pair.bodyA.label === 'sinkFloor' && pair.bodyB.label === 'tokenOrb') ||
+                              (pair.bodyB.label === 'sinkFloor' && pair.bodyA.label === 'tokenOrb');
+
+            if (isSinkHit) {
+              const orbBody = pair.bodyA.label === 'tokenOrb' ? pair.bodyA : pair.bodyB;
+              if (!orbBody.hasDrained) {
+                orbBody.hasDrained = true;
+                handleOrbDrained(orbBody);
+              }
+            }
+          }
+        });
+
+        injectTokensIntoReservoir();
+        window.addEventListener('resize', handleCanvasResize);
+      }
+
+      function buildChamberWalls() {
+        if (reservoirComposite) Matter.Composite.remove(world, reservoirComposite);
+        reservoirComposite = Matter.Composite.create();
+
+        const wallOptions = {
+          isStatic: true,
+          render: {
+            fillStyle: '#cbd5e1', // clean slate-300
+            strokeStyle: '#94a3b8',
+            lineWidth: 1
+          },
+          restitution: 0.35,
+          friction: 0.08
+        };
+
+        const w = canvasWidth;
+        const h = canvasHeight;
+        const neckY = h * 0.48;
+        const neckHalfOpening = 26;
+        const wallThickness = 20;
+
+        // Slopes
+        const x1 = 15, y1 = h * 0.08;
+        const x2 = (w / 2) - neckHalfOpening, y2 = neckY;
+        const leftMidX = (x1 + x2) / 2;
+        const leftMidY = (y1 + y2) / 2;
+        const leftLength = Math.hypot(x2 - x1, y2 - y1);
+        const leftAngle = Math.atan2(y2 - y1, x2 - x1);
+
+        const leftSlope = Matter.Bodies.rectangle(leftMidX, leftMidY, leftLength, wallThickness, {
+          ...wallOptions,
+          angle: leftAngle
+        });
+
+        const x3 = w - 15, y3 = h * 0.08;
+        const x4 = (w / 2) + neckHalfOpening, y4 = neckY;
+        const rightMidX = (x3 + x4) / 2;
+        const rightMidY = (y3 + y4) / 2;
+        const rightLength = Math.hypot(x4 - x3, y4 - y3);
+        const rightAngle = Math.atan2(y4 - y3, x4 - x3);
+
+        const rightSlope = Matter.Bodies.rectangle(rightMidX, rightMidY, rightLength, wallThickness, {
+          ...wallOptions,
+          angle: rightAngle
+        });
+
+        const leftOuterWall = Matter.Bodies.rectangle(10, h / 2, wallThickness, h, wallOptions);
+        const rightOuterWall = Matter.Bodies.rectangle(w - 10, h / 2, wallThickness, h, wallOptions);
+        const topCeiling = Matter.Bodies.rectangle(w / 2, 8, w, wallThickness, wallOptions);
+
+        // Lower sink floor (fresh aquatic mint/emerald floor)
+        const sinkFloor = Matter.Bodies.rectangle(w / 2, h - 10, w - 24, 20, {
+          isStatic: true,
+          label: 'sinkFloor',
+          render: {
+            fillStyle: '#e0f2fe',
+            strokeStyle: '#0284c7',
+            lineWidth: 2
+          },
+          restitution: 0.55
+        });
+
+        // Valve gate flaps (brushed golden brass)
+        const gateWidth = neckHalfOpening * 1.5;
+        const gateHeight = 10;
+        leftValveGate = Matter.Bodies.rectangle(
+          (w / 2) - (gateWidth / 2) + 2,
+          neckY + 8,
+          gateWidth,
+          gateHeight,
+          {
+            isStatic: true,
+            label: 'leftValve',
+            render: {
+              fillStyle: '#f59e0b',
+              strokeStyle: '#b45309',
+              lineWidth: 1.5
+            }
+          }
+        );
+
+        rightValveGate = Matter.Bodies.rectangle(
+          (w / 2) + (gateWidth / 2) - 2,
+          neckY + 8,
+          gateWidth,
+          gateHeight,
+          {
+            isStatic: true,
+            label: 'rightValve',
+            render: {
+              fillStyle: '#f59e0b',
+              strokeStyle: '#b45309',
+              lineWidth: 1.5
+            }
+          }
+        );
+
+        Matter.Composite.add(reservoirComposite, [
+          leftOuterWall,
+          rightOuterWall,
+          topCeiling,
+          leftSlope,
+          rightSlope,
+          sinkFloor,
+          leftValveGate,
+          rightValveGate
+        ]);
+
+        Matter.Composite.add(world, reservoirComposite);
+      }
+
+      function handleCanvasResize() {
+        const container = document.getElementById('canvasContainer');
+        if (!container) return;
+        const newW = container.clientWidth;
+        const newH = container.clientHeight;
+        if (newW === canvasWidth && newH === canvasHeight) return;
+
+        canvasWidth = newW;
+        canvasHeight = newH;
+        render.canvas.width = newW;
+        render.canvas.height = newH;
+        render.options.width = newW;
+        render.options.height = newH;
+
+        buildChamberWalls();
+      }
+
+      function injectTokensIntoReservoir() {
+        for (let i = 0; i < orbs.length; i++) {
+          Matter.Composite.remove(world, orbs[i]);
+        }
+        orbs = [];
+
+        const totalOrbsCount = 110;
+        const w = canvasWidth;
+        const topAreaH = canvasHeight * 0.38;
+
+        const cohortKeys = ['seed', 'team', 'staking', 'public'];
+
+        cohortKeys.forEach(key => {
+          const cohort = state.cohorts[key];
+          const count = Math.max(5, Math.round(totalOrbsCount * (cohort.alloc / 100)));
+
+          for (let i = 0; i < count; i++) {
+            const x = (w * 0.25) + (Math.random() * (w * 0.5));
+            const y = 25 + (Math.random() * topAreaH);
+            const radius = 10 + (Math.random() * 3.5);
+
+            const orb = Matter.Bodies.circle(x, y, radius, {
+              restitution: 0.68,
+              friction: 0.05,
+              density: 0.002,
+              label: 'tokenOrb',
+              cohortKey: cohort.key,
+              cohortType: key,
+              cohortColor: cohort.color,
+              hasDrained: false,
+              render: {
+                fillStyle: cohort.color,
+                strokeStyle: '#ffffff',
+                lineWidth: 1.5
+              }
+            });
+
+            Matter.Body.setVelocity(orb, {
+              x: (Math.random() - 0.5) * 2,
+              y: Math.random() * 1.5
+            });
+
+            orbs.push(orb);
+          }
+        });
+
+        Matter.Composite.add(world, orbs);
+        updatePhysicsHUD();
+      }
+
+      let currentApertureOpening = 0;
+
+      function setValveAperture(openingFactor) {
+        currentApertureOpening = Math.max(0, Math.min(1, openingFactor));
+        const neckY = canvasHeight * 0.48;
+        const w = canvasWidth;
+        const neckHalfOpening = 26;
+        const gateWidth = neckHalfOpening * 1.5;
+        const shift = currentApertureOpening * 32;
+
+        if (leftValveGate && rightValveGate) {
+          Matter.Body.setPosition(leftValveGate, {
+            x: ((w / 2) - (gateWidth / 2) + 2) - shift,
+            y: neckY + 8 + (currentApertureOpening * 8)
+          });
+          Matter.Body.setAngle(leftValveGate, -currentApertureOpening * 0.4);
+
+          Matter.Body.setPosition(rightValveGate, {
+            x: ((w / 2) + (gateWidth / 2) - 2) + shift,
+            y: neckY + 8 + (currentApertureOpening * 8)
+          });
+          Matter.Body.setAngle(rightValveGate, currentApertureOpening * 0.4);
+        }
+
+        const valveEl = document.getElementById('valveStatusText');
+        if (valveEl) {
+          const pct = Math.round(currentApertureOpening * 100);
+          if (pct === 0) {
+            valveEl.textContent = 'CLOSED (0%)';
+            valveEl.className = 'text-[11px] font-mono font-semibold text-slate-500';
+          } else if (pct < 45) {
+            valveEl.textContent = `PARTIAL (${pct}%)`;
+            valveEl.className = 'text-[11px] font-mono font-bold text-amber-600';
+          } else {
+            valveEl.textContent = `OPEN (${pct}%)`;
+            valveEl.className = 'text-[11px] font-mono font-bold text-rose-600';
+          }
+        }
+      }
+
+      function agitateChamber() {
+        if (isAgitating) return;
+        isAgitating = true;
+
+        for (let i = 0; i < orbs.length; i++) {
+          const body = orbs[i];
+          if (!body.hasDrained) {
+            Matter.Body.applyForce(body, body.position, {
+              x: (Math.random() - 0.5) * 0.015,
+              y: -0.016 - (Math.random() * 0.012)
+            });
+          }
+        }
+
+        setTimeout(() => { isAgitating = false; }, 300);
+      }
+
+      function handleOrbDrained(orbBody) {
+        playTone(320 + Math.random() * 120, 'triangle', 0.09, 0.035);
+        updatePhysicsHUD();
+
+        const flashEl = document.getElementById('sinkSlippageFlash');
+        if (flashEl) {
+          flashEl.textContent = `Sell Drain: +${orbBody.cohortKey} Token Absorbed`;
+          flashEl.className = 'text-rose-600 font-bold transition';
+          setTimeout(() => {
+            flashEl.className = 'text-emerald-700 font-semibold transition';
+            const m = state.currentMonth;
+            const sched = calculateVestingSchedule();
+            const currImpact = sched[m] ? sched[m].priceImpactPct.toFixed(1) : '0.0';
+            flashEl.textContent = `Price Impact: ${currImpact}%`;
+          }, 800);
+        }
+      }
+
+      function updatePhysicsHUD() {
+        let lockedCount = 0;
+        let drainedCount = 0;
+        for (let i = 0; i < orbs.length; i++) {
+          if (orbs[i].hasDrained) drainedCount++;
+          else lockedCount++;
+        }
+
+        const resEl = document.getElementById('reservoirTokenCount');
+        if (resEl) resEl.textContent = `${lockedCount} Locked Tokens`;
+
+        const sinkEl = document.getElementById('sinkTokenCount');
+        if (sinkEl) sinkEl.textContent = `Drained: ${drainedCount} Unlocked`;
+      }
+
+      // -----------------------------------------------------------------------
+      // 4. CHART.JS CONFIGURATION (CLEAN LIGHT EDITORIAL)
+      // -----------------------------------------------------------------------
+      let chartCirculating = null;
+      let chartSell = null;
+
+      function initCharts() {
+        const ctxCirc = document.getElementById('chartCirculatingSupply').getContext('2d');
+        
+        chartCirculating = new Chart(ctxCirc, {
+          type: 'line',
+          data: {
+            labels: Array.from({ length: 49 }, (_, i) => `M${i}`),
+            datasets: [
+              {
+                label: 'Public & Float',
+                data: [],
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.25)',
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0
+              },
+              {
+                label: 'Staking & Rewards',
+                data: [],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0
+              },
+              {
+                label: 'Core Team',
+                data: [],
+                borderColor: '#f43f5e',
+                backgroundColor: 'rgba(244, 63, 94, 0.25)',
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0
+              },
+              {
+                label: 'Seed Investors',
+                data: [],
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.3)',
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              x: {
+                grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                ticks: {
+                  color: '#64748b',
+                  font: { family: 'JetBrains Mono', size: 9 },
+                  maxTicksLimit: 12
+                }
+              },
+              y: {
+                stacked: true,
+                grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                ticks: {
+                  color: '#64748b',
+                  font: { family: 'JetBrains Mono', size: 9 },
+                  callback: function (val) {
+                    if (val >= 1e9) return (val / 1e9).toFixed(1) + 'B';
+                    if (val >= 1e6) return (val / 1e6).toFixed(0) + 'M';
+                    return val;
+                  }
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: '#334155',
+                  boxWidth: 10,
+                  font: { family: 'Inter', size: 10, weight: 600 }
+                }
+              },
+              tooltip: {
+                backgroundColor: '#ffffff',
+                titleColor: '#0f172a',
+                bodyColor: '#334155',
+                borderColor: '#e2e8f0',
+                borderWidth: 1,
+                titleFont: { family: 'JetBrains Mono', size: 11, weight: 'bold' },
+                bodyFont: { family: 'JetBrains Mono', size: 10 },
+                boxPadding: 4
+              }
+            }
+          }
+        });
+
+        const ctxSell = document.getElementById('chartSellPressure').getContext('2d');
+        
+        chartSell = new Chart(ctxSell, {
+          type: 'bar',
+          data: {
+            labels: Array.from({ length: 49 }, (_, i) => `M${i}`),
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Projected Monthly Sell ($)',
+                data: [],
+                backgroundColor: 'rgba(244, 63, 94, 0.65)',
+                borderColor: '#f43f5e',
+                borderWidth: 1,
+                borderRadius: 4
+              },
+              {
+                type: 'line',
+                label: 'Monthly Buy Absorption ($)',
+                data: [],
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              x: {
+                grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                ticks: {
+                  color: '#64748b',
+                  font: { family: 'JetBrains Mono', size: 9 },
+                  maxTicksLimit: 12
+                }
+              },
+              y: {
+                grid: { color: 'rgba(226, 232, 240, 0.8)' },
+                ticks: {
+                  color: '#64748b',
+                  font: { family: 'JetBrains Mono', size: 9 },
+                  callback: function (val) {
+                    if (val >= 1e6) return '$' + (val / 1e6).toFixed(1) + 'M';
+                    if (val >= 1e3) return '$' + (val / 1e3).toFixed(0) + 'K';
+                    return '$' + val;
+                  }
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: '#334155',
+                  boxWidth: 10,
+                  font: { family: 'Inter', size: 10, weight: 600 }
+                }
+              },
+              tooltip: {
+                backgroundColor: '#ffffff',
+                titleColor: '#0f172a',
+                bodyColor: '#334155',
+                borderColor: '#e2e8f0',
+                borderWidth: 1
+              }
+            }
+          }
+        });
+      }
+
+      function updateCharts(schedule) {
+        if (!chartCirculating || !chartSell) return;
+
+        const seedData = schedule.map(s => s.cumSeed);
+        const teamData = schedule.map(s => s.cumTeam);
+        const stakingData = schedule.map(s => s.cumStaking);
+        const publicData = schedule.map(s => s.cumPublic);
+
+        chartCirculating.data.datasets[3].data = seedData;
+        chartCirculating.data.datasets[2].data = teamData;
+        chartCirculating.data.datasets[1].data = stakingData;
+        chartCirculating.data.datasets[0].data = publicData;
+        chartCirculating.update('none');
+
+        const sellUSDData = schedule.map(s => s.monthlySellUSD);
+        const absorptionData = schedule.map(s => s.monthlyAbsorptionUSD);
+
+        chartSell.data.datasets[0].data = sellUSDData;
+        chartSell.data.datasets[1].data = absorptionData;
+        chartSell.update('none');
+      }
+
+      // -----------------------------------------------------------------------
+      // 5. GLOBAL UI & METRIC SYNCHRONIZATION
+      // -----------------------------------------------------------------------
+      function formatUSD(num) {
+        if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
+        if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+        if (num >= 1e3) return '$' + (num / 1e3).toFixed(0) + 'K';
+        return '$' + Math.round(num).toLocaleString('en-US');
+      }
+
+      function formatNumber(num) {
+        return Math.round(num).toLocaleString('en-US');
+      }
+
+      function updateAll() {
+        const schedule = calculateVestingSchedule();
+        const metrics = computeMetrics(schedule);
+
+        // Global Ribbon
+        document.getElementById('metricFDV').textContent = formatUSD(metrics.fdv);
+        document.getElementById('metricDay1Cap').textContent = formatUSD(metrics.day1Cap);
+        document.getElementById('metricFloatPct').textContent = `(${metrics.floatPct.toFixed(1)}%)`;
+        document.getElementById('metricPeakUnlock').textContent = formatUSD(metrics.peakUnlockUSD);
+        document.getElementById('metricPeakMonth').textContent = `@ Mo. ${metrics.peakMonth}`;
+        document.getElementById('metricMaxSlippage').textContent = `${metrics.maxPriceImpact.toFixed(1)}%`;
+        document.getElementById('metricSeedROI').textContent = `${metrics.seedMultiple.toFixed(1)}x`;
+
+        // Health Badge
+        const healthBadge = document.getElementById('healthBadge');
+        if (metrics.auditScore >= 80) {
+          healthBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+          healthBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>STABLE (GRADE A)`;
+        } else if (metrics.auditScore >= 60) {
+          healthBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300';
+          healthBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>MODERATE STRESS (GRADE B)`;
+        } else {
+          healthBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-100 text-rose-800 border border-rose-300';
+          healthBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>CATASTROPHIC DRAIN (GRADE F)`;
+        }
+
+        // Left Controls Values
+        document.getElementById('displayTotalSupply').textContent = formatNumber(state.totalSupply);
+        document.getElementById('displayPrice').textContent = `$${state.price.toFixed(2)}`;
+        document.getElementById('displayPoolDepth').textContent = formatUSD(state.poolDepth);
+        document.getElementById('displayBuySupport').textContent = formatUSD(state.dailyBuySupport) + '/day';
+
+        // Cohort Allocation sum
+        const allocSum = state.cohorts.seed.alloc + state.cohorts.team.alloc + state.cohorts.staking.alloc + state.cohorts.public.alloc;
+        const allocBadge = document.getElementById('allocSumBadge');
+        const allocWarning = document.getElementById('allocWarning');
+
+        allocBadge.textContent = `Total: ${allocSum}%`;
+        if (allocSum === 100) {
+          allocBadge.className = 'text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+          allocWarning.classList.add('hidden');
+        } else {
+          allocBadge.className = 'text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300';
+          allocWarning.classList.remove('hidden');
+        }
+
+        document.getElementById('dispSeedAlloc').textContent = `${state.cohorts.seed.alloc}%`;
+        document.getElementById('dispTeamAlloc').textContent = `${state.cohorts.team.alloc}%`;
+        document.getElementById('dispStakingAlloc').textContent = `${state.cohorts.staking.alloc}%`;
+        document.getElementById('dispPublicAlloc').textContent = `${state.cohorts.public.alloc}%`;
+
+        // Audit Card
+        document.getElementById('auditScoreBadge').textContent = `Health: ${metrics.auditScore}/100`;
+        document.getElementById('metricReqVolume').textContent = formatUSD(metrics.requiredDailyVolume);
+        document.getElementById('metricDepthMultiple').textContent = `${metrics.depthMultiple.toFixed(2)}x Depth`;
+
+        // Warning Callout
+        const warnBox = document.getElementById('riskWarningBox');
+        const warnIcon = document.getElementById('riskWarningIcon');
+        const warnTitle = document.getElementById('riskWarningTitle');
+        const warnDesc = document.getElementById('riskWarningDesc');
+
+        if (metrics.depthMultiple > 2.5 || metrics.maxPriceImpact > 35) {
+          warnBox.className = 'p-3.5 rounded-xl border transition-all text-xs flex items-start space-x-2.5 bg-rose-50 border-rose-300 text-rose-900';
+          warnIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 text-base mt-0.5';
+          warnTitle.textContent = 'CRITICAL: Acute Liquidity Drain Alert';
+          warnDesc.textContent = `Peak monthly unlock exceeds 250% of available DEX liquidity pool depth. AMM price slippage reaches ${metrics.maxPriceImpact.toFixed(1)}%, which triggers cascading liquidations unless cliff length is extended or dedicated market making depth is committed.`;
+        } else if (metrics.depthMultiple > 1.2 || metrics.maxPriceImpact > 18) {
+          warnBox.className = 'p-3.5 rounded-xl border transition-all text-xs flex items-start space-x-2.5 bg-amber-50 border-amber-300 text-amber-900';
+          warnIcon.className = 'fa-solid fa-triangle-exclamation text-amber-600 text-base mt-0.5';
+          warnTitle.textContent = 'Elevated Unlock Sell Stress';
+          warnDesc.textContent = `Monthly unlocks outpace organic daily buy support by up to ${metrics.depthMultiple.toFixed(2)}x. Slippage of ~${metrics.maxPriceImpact.toFixed(1)}% is anticipated at Month ${metrics.peakMonth}.`;
+        } else {
+          warnBox.className = 'p-3.5 rounded-xl border transition-all text-xs flex items-start space-x-2.5 bg-emerald-50 border-emerald-200 text-emerald-900';
+          warnIcon.className = 'fa-solid fa-circle-check text-emerald-600 text-base mt-0.5';
+          warnTitle.textContent = 'Healthy Institutional Emission Curve';
+          warnDesc.textContent = 'Emission schedule is well-calibrated. Monthly unlock volume stays safely within defensible market capacity limits (< 20% max price impact).';
+        }
+
+        // Timeline Slider & Valve synchronization
+        const currM = state.currentMonth;
+        const currentMonthData = schedule[currM] || schedule[0];
+        document.getElementById('displayMonthBadge').textContent = currM === 0 ? 'Month 0 (TGE)' : `Month ${currM}`;
+
+        const maxExpectedSell = Math.max(metrics.peakUnlockUSD, 1);
+        const currentUnlockIntensity = currentMonthData.monthlySellUSD / maxExpectedSell;
+        setValveAperture(currentUnlockIntensity);
+
+        updateCharts(schedule);
+        populateLedgerTable(schedule);
+      }
+
+      function normalizeAllocations() {
+        const c = state.cohorts;
+        const sum = c.seed.alloc + c.team.alloc + c.staking.alloc + c.public.alloc;
+        if (sum === 0) return;
+
+        c.seed.alloc = Math.round((c.seed.alloc / sum) * 100);
+        c.team.alloc = Math.round((c.team.alloc / sum) * 100);
+        c.staking.alloc = Math.round((c.staking.alloc / sum) * 100);
+        c.public.alloc = 100 - (c.seed.alloc + c.team.alloc + c.staking.alloc);
+
+        document.getElementById('inputSeedAlloc').value = c.seed.alloc;
+        document.getElementById('inputTeamAlloc').value = c.team.alloc;
+        document.getElementById('inputStakingAlloc').value = c.staking.alloc;
+        document.getElementById('inputPublicAlloc').value = c.public.alloc;
+
+        updateAll();
+        injectTokensIntoReservoir();
+      }
+
+      // -----------------------------------------------------------------------
+      // 6. 48-MONTH NUMERICAL LEDGER & CSV EXPORT
+      // -----------------------------------------------------------------------
+      function populateLedgerTable(schedule) {
+        const tbody = document.getElementById('ledgerTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = schedule.map(row => `
+          <tr class="hover:bg-slate-50 transition ${row.month === state.currentMonth ? 'bg-brand-50/60 font-bold' : ''}">
+            <td class="p-2.5 text-slate-900">M${row.month}</td>
+            <td class="p-2.5 text-amber-700">${formatNumber(row.deltaSeed)}</td>
+            <td class="p-2.5 text-rose-700">${formatNumber(row.deltaTeam)}</td>
+            <td class="p-2.5 text-emerald-700">${formatNumber(row.deltaStaking)}</td>
+            <td class="p-2.5 text-sky-700">${formatNumber(row.deltaPublic)}</td>
+            <td class="p-2.5 text-slate-900 font-semibold">${formatNumber(row.totalDelta)}</td>
+            <td class="p-2.5 text-brand-700">${row.pctCirculating.toFixed(1)}%</td>
+            <td class="p-2.5 text-slate-800">${formatUSD(row.monthlySellUSD)}</td>
+            <td class="p-2.5 ${row.priceImpactPct > 20 ? 'text-rose-600 font-bold' : 'text-slate-600'}">${row.priceImpactPct.toFixed(1)}%</td>
+          </tr>
+        `).join('');
+      }
+
+      function downloadLedgerCSV() {
+        const schedule = calculateVestingSchedule();
+        let csv = "Month,Seed_Tokens,Team_Tokens,Staking_Tokens,Public_Tokens,Total_Unlocked_Month,Cumulative_Float_Pct,Projected_Sell_USD,Price_Impact_Pct\n";
+
+        schedule.forEach(r => {
+          csv += `${r.month},${Math.round(r.deltaSeed)},${Math.round(r.deltaTeam)},${Math.round(r.deltaStaking)},${Math.round(r.deltaPublic)},${Math.round(r.totalDelta)},${r.pctCirculating.toFixed(2)},${Math.round(r.monthlySellUSD)},${r.priceImpactPct.toFixed(2)}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TokenPhysics_VestingSchedule_${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('CSV downloaded successfully!');
+      }
+
+      // -----------------------------------------------------------------------
+      // 7. TIMELINE PLAYER & SIMULATION STEPPING
+      // -----------------------------------------------------------------------
+      function stepMonth(targetMonth) {
+        state.currentMonth = Math.max(0, Math.min(48, targetMonth));
+        document.getElementById('timelineSlider').value = state.currentMonth;
+
+        const schedule = calculateVestingSchedule();
+        const curData = schedule[state.currentMonth];
+
+        if (curData && curData.totalDelta > 0) {
+          const peakVal = Math.max(...schedule.map(s => s.monthlySellUSD));
+          const unlockFactor = peakVal > 0 ? (curData.monthlySellUSD / peakVal) : 0.5;
+          setValveAperture(Math.max(0.3, unlockFactor));
+
+          for (let i = 0; i < orbs.length; i++) {
+            const body = orbs[i];
+            if (!body.hasDrained && Math.random() < 0.28) {
+              Matter.Body.applyForce(body, body.position, {
+                x: (Math.random() - 0.5) * 0.007,
+                y: 0.008 + (Math.random() * 0.012)
+              });
+            }
+          }
+        }
+
+        updateAll();
+      }
+
+      function togglePlay() {
+        state.isPlaying = !state.isPlaying;
+        const icon = document.getElementById('playIcon');
+
+        if (state.isPlaying) {
+          icon.className = 'fa-solid fa-pause text-xs';
+          state.playInterval = setInterval(() => {
+            if (state.currentMonth >= 48) {
+              stepMonth(0);
+            } else {
+              stepMonth(state.currentMonth + 1);
+            }
+          }, state.playSpeed);
+        } else {
+          icon.className = 'fa-solid fa-play text-xs';
+          clearInterval(state.playInterval);
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // 8. SCENARIOS & SHAREABLE URL HASH
+      // -----------------------------------------------------------------------
+      function applyPreset(name) {
+        if (name === 'sustainable') {
+          // Arbitrum-style Drip
+          state.totalSupply = 1000000000;
+          state.price = 0.50;
+          state.seedEntryPrice = 0.05;
+          state.poolDepth = 12000000;
+          state.dailyBuySupport = 450000;
+
+          state.cohorts.seed = { name: 'Seed Investors', color: '#f59e0b', stroke: '#d97706', alloc: 15, tge: 5, cliff: 12, vest: 24, dumpProp: 60, key: 'S' };
+          state.cohorts.team = { name: 'Core Team', color: '#f43f5e', stroke: '#e11d48', alloc: 18, tge: 0, cliff: 12, vest: 36, dumpProp: 15, key: 'T' };
+          state.cohorts.staking = { name: 'Staking & Community', color: '#10b981', stroke: '#059669', alloc: 42, tge: 8, cliff: 0, vest: 48, dumpProp: 25, key: 'K' };
+          state.cohorts.public = { name: 'Public & Float', color: '#0284c7', stroke: '#0369a1', alloc: 25, tge: 30, cliff: 0, vest: 18, dumpProp: 50, key: 'P' };
+          
+          confetti({ particleCount: 35, spread: 55, origin: { y: 0.8 } });
+        } else if (name === 'balanced') {
+          // Balanced VC L1
+          state.totalSupply = 1000000000;
+          state.price = 1.00;
+          state.seedEntryPrice = 0.10;
+          state.poolDepth = 15000000;
+          state.dailyBuySupport = 500000;
+
+          state.cohorts.seed = { name: 'Seed Investors', color: '#f59e0b', stroke: '#d97706', alloc: 20, tge: 0, cliff: 12, vest: 24, dumpProp: 70, key: 'S' };
+          state.cohorts.team = { name: 'Core Team', color: '#f43f5e', stroke: '#e11d48', alloc: 20, tge: 0, cliff: 12, vest: 36, dumpProp: 20, key: 'T' };
+          state.cohorts.staking = { name: 'Staking & Community', color: '#10b981', stroke: '#059669', alloc: 40, tge: 10, cliff: 0, vest: 36, dumpProp: 30, key: 'K' };
+          state.cohorts.public = { name: 'Public & Float', color: '#0284c7', stroke: '#0369a1', alloc: 20, tge: 40, cliff: 0, vest: 12, dumpProp: 60, key: 'P' };
+        } else if (name === 'dump') {
+          // Predatory Low Float
+          state.totalSupply = 1000000000;
+          state.price = 1.50;
+          state.seedEntryPrice = 0.03; // 50x paper multiple
+          state.poolDepth = 2500000;
+          state.dailyBuySupport = 80000;
+
+          state.cohorts.seed = { name: 'Seed Investors', color: '#f59e0b', stroke: '#d97706', alloc: 35, tge: 30, cliff: 3, vest: 6, dumpProp: 95, key: 'S' };
+          state.cohorts.team = { name: 'Core Team', color: '#f43f5e', stroke: '#e11d48', alloc: 25, tge: 15, cliff: 3, vest: 12, dumpProp: 40, key: 'T' };
+          state.cohorts.staking = { name: 'Staking & Community', color: '#10b981', stroke: '#059669', alloc: 20, tge: 5, cliff: 0, vest: 12, dumpProp: 40, key: 'K' };
+          state.cohorts.public = { name: 'Public & Float', color: '#0284c7', stroke: '#0369a1', alloc: 20, tge: 50, cliff: 0, vest: 6, dumpProp: 90, key: 'P' };
+        } else if (name === 'fair') {
+          // Fair Launch 35% Float
+          state.totalSupply = 500000000;
+          state.price = 0.20;
+          state.seedEntryPrice = 0.08;
+          state.poolDepth = 8000000;
+          state.dailyBuySupport = 300000;
+
+          state.cohorts.seed = { name: 'Seed Investors', color: '#f59e0b', stroke: '#d97706', alloc: 10, tge: 0, cliff: 6, vest: 18, dumpProp: 50, key: 'S' };
+          state.cohorts.team = { name: 'Core Team', color: '#f43f5e', stroke: '#e11d48', alloc: 15, tge: 0, cliff: 6, vest: 24, dumpProp: 15, key: 'T' };
+          state.cohorts.staking = { name: 'Staking & Community', color: '#10b981', stroke: '#059669', alloc: 40, tge: 10, cliff: 0, vest: 36, dumpProp: 30, key: 'K' };
+          state.cohorts.public = { name: 'Public & Float', color: '#0284c7', stroke: '#0369a1', alloc: 35, tge: 60, cliff: 0, vest: 12, dumpProp: 50, key: 'P' };
+        }
+
+        syncInputsWithState();
+        updateAll();
+        injectTokensIntoReservoir();
+      }
+
+      function syncInputsWithState() {
+        document.getElementById('inputTotalSupply').value = state.totalSupply;
+        document.getElementById('inputPrice').value = state.price;
+        document.getElementById('inputSeedEntryPrice').value = state.seedEntryPrice;
+        document.getElementById('inputPoolDepth').value = state.poolDepth;
+        document.getElementById('inputBuySupport').value = state.dailyBuySupport;
+
+        document.getElementById('inputSeedAlloc').value = state.cohorts.seed.alloc;
+        document.getElementById('numSeedTge').value = state.cohorts.seed.tge;
+        document.getElementById('numSeedCliff').value = state.cohorts.seed.cliff;
+        document.getElementById('numSeedVest').value = state.cohorts.seed.vest;
+        document.getElementById('propSeed').value = state.cohorts.seed.dumpProp;
+
+        document.getElementById('inputTeamAlloc').value = state.cohorts.team.alloc;
+        document.getElementById('numTeamTge').value = state.cohorts.team.tge;
+        document.getElementById('numTeamCliff').value = state.cohorts.team.cliff;
+        document.getElementById('numTeamVest').value = state.cohorts.team.vest;
+        document.getElementById('propTeam').value = state.cohorts.team.dumpProp;
+
+        document.getElementById('inputStakingAlloc').value = state.cohorts.staking.alloc;
+        document.getElementById('numStakingTge').value = state.cohorts.staking.tge;
+        document.getElementById('numStakingCliff').value = state.cohorts.staking.cliff;
+        document.getElementById('numStakingVest').value = state.cohorts.staking.vest;
+        document.getElementById('propStaking').value = state.cohorts.staking.dumpProp;
+
+        document.getElementById('inputPublicAlloc').value = state.cohorts.public.alloc;
+        document.getElementById('numPublicTge').value = state.cohorts.public.tge;
+        document.getElementById('numPublicCliff').value = state.cohorts.public.cliff;
+        document.getElementById('numPublicVest').value = state.cohorts.public.vest;
+        document.getElementById('propPublic').value = state.cohorts.public.dumpProp;
+      }
+
+      function exportShareableURL() {
+        const payload = {
+          s: state.totalSupply,
+          p: state.price,
+          sp: state.seedEntryPrice,
+          d: state.poolDepth,
+          b: state.dailyBuySupport,
+          c: {
+            sd: [state.cohorts.seed.alloc, state.cohorts.seed.tge, state.cohorts.seed.cliff, state.cohorts.seed.vest, state.cohorts.seed.dumpProp],
+            tm: [state.cohorts.team.alloc, state.cohorts.team.tge, state.cohorts.team.cliff, state.cohorts.team.vest, state.cohorts.team.dumpProp],
+            st: [state.cohorts.staking.alloc, state.cohorts.staking.tge, state.cohorts.staking.cliff, state.cohorts.staking.vest, state.cohorts.staking.dumpProp],
+            pb: [state.cohorts.public.alloc, state.cohorts.public.tge, state.cohorts.public.cliff, state.cohorts.public.vest, state.cohorts.public.dumpProp]
+          }
+        };
+
+        const hash = btoa(JSON.stringify(payload));
+        const url = window.location.origin + window.location.pathname + '#' + hash;
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Shareable model link copied to clipboard!');
+        }).catch(() => {
+          window.location.hash = hash;
+          showToast('Model encoded into browser address bar!');
+        });
+      }
+
+      function loadModelFromHash() {
+        if (!window.location.hash || window.location.hash.length < 5) return;
+        try {
+          const raw = window.location.hash.substring(1);
+          const data = JSON.parse(atob(raw));
+          if (data.s) state.totalSupply = data.s;
+          if (data.p) state.price = data.p;
+          if (data.sp) state.seedEntryPrice = data.sp;
+          if (data.d) state.poolDepth = data.d;
+          if (data.b) state.dailyBuySupport = data.b;
+          if (data.c) {
+            if (data.c.sd) [state.cohorts.seed.alloc, state.cohorts.seed.tge, state.cohorts.seed.cliff, state.cohorts.seed.vest, state.cohorts.seed.dumpProp] = data.c.sd;
+            if (data.c.tm) [state.cohorts.team.alloc, state.cohorts.team.tge, state.cohorts.team.cliff, state.cohorts.team.vest, state.cohorts.team.dumpProp] = data.c.tm;
+            if (data.c.st) [state.cohorts.staking.alloc, state.cohorts.staking.tge, state.cohorts.staking.cliff, state.cohorts.staking.vest, state.cohorts.staking.dumpProp] = data.c.st;
+            if (data.c.pb) [state.cohorts.public.alloc, state.cohorts.public.tge, state.cohorts.public.cliff, state.cohorts.public.vest, state.cohorts.public.dumpProp] = data.c.pb;
+          }
+          syncInputsWithState();
+        } catch (e) {
+          console.warn('Could not parse model hash', e);
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // 9. EVENT BINDINGS
+      // -----------------------------------------------------------------------
+      function bindEventListeners() {
+        function debounce(func, wait) {
+          let timeout;
+          return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+          };
+        }
+
+        const handleRealtimeUpdate = debounce(() => {
+          updateAll();
+        }, 30);
+
+        document.getElementById('inputTotalSupply').addEventListener('input', (e) => {
+          state.totalSupply = parseFloat(e.target.value);
+          handleRealtimeUpdate();
+        });
+
+        document.getElementById('inputPrice').addEventListener('input', (e) => {
+          state.price = parseFloat(e.target.value);
+          handleRealtimeUpdate();
+        });
+
+        document.getElementById('inputSeedEntryPrice').addEventListener('change', (e) => {
+          state.seedEntryPrice = Math.max(0.0001, parseFloat(e.target.value) || 0.01);
+          handleRealtimeUpdate();
+        });
+
+        document.getElementById('inputSeedAlloc').addEventListener('input', (e) => {
+          state.cohorts.seed.alloc = parseInt(e.target.value);
+          handleRealtimeUpdate();
+        });
+        document.getElementById('inputTeamAlloc').addEventListener('input', (e) => {
+          state.cohorts.team.alloc = parseInt(e.target.value);
+          handleRealtimeUpdate();
+        });
+        document.getElementById('inputStakingAlloc').addEventListener('input', (e) => {
+          state.cohorts.staking.alloc = parseInt(e.target.value);
+          handleRealtimeUpdate();
+        });
+        document.getElementById('inputPublicAlloc').addEventListener('input', (e) => {
+          state.cohorts.public.alloc = parseInt(e.target.value);
+          handleRealtimeUpdate();
+        });
+
+        const numInputs = [
+          { id: 'numSeedTge', path: ['seed', 'tge'] },
+          { id: 'numSeedCliff', path: ['seed', 'cliff'] },
+          { id: 'numSeedVest', path: ['seed', 'vest'] },
+          { id: 'propSeed', path: ['seed', 'dumpProp'] },
+
+          { id: 'numTeamTge', path: ['team', 'tge'] },
+          { id: 'numTeamCliff', path: ['team', 'cliff'] },
+          { id: 'numTeamVest', path: ['team', 'vest'] },
+          { id: 'propTeam', path: ['team', 'dumpProp'] },
+
+          { id: 'numStakingTge', path: ['staking', 'tge'] },
+          { id: 'numStakingCliff', path: ['staking', 'cliff'] },
+          { id: 'numStakingVest', path: ['staking', 'vest'] },
+          { id: 'propStaking', path: ['staking', 'dumpProp'] },
+
+          { id: 'numPublicTge', path: ['public', 'tge'] },
+          { id: 'numPublicCliff', path: ['public', 'cliff'] },
+          { id: 'numPublicVest', path: ['public', 'vest'] },
+          { id: 'propPublic', path: ['public', 'dumpProp'] }
+        ];
+
+        numInputs.forEach(item => {
+          const el = document.getElementById(item.id);
+          el.addEventListener('change', (e) => {
+            const val = Math.max(0, parseFloat(e.target.value) || 0);
+            state.cohorts[item.path[0]][item.path[1]] = val;
+            handleRealtimeUpdate();
+          });
+        });
+
+        document.getElementById('inputPoolDepth').addEventListener('input', (e) => {
+          state.poolDepth = parseFloat(e.target.value);
+          handleRealtimeUpdate();
+        });
+        document.getElementById('inputBuySupport').addEventListener('input', (e) => {
+          state.dailyBuySupport = parseFloat(e.target.value);
+          handleRealtimeUpdate();
+        });
+
+        document.getElementById('btnNormalizeAlloc').addEventListener('click', normalizeAllocations);
+
+        document.getElementById('timelineSlider').addEventListener('input', (e) => {
+          stepMonth(parseInt(e.target.value));
+        });
+
+        document.getElementById('btnPlayPause').addEventListener('click', togglePlay);
+        document.getElementById('btnResetTimeline').addEventListener('click', () => {
+          if (state.isPlaying) togglePlay();
+          stepMonth(0);
+        });
+
+        document.getElementById('btnInjectOrbs').addEventListener('click', () => injectTokensIntoReservoir());
+        document.getElementById('btnAgitate').addEventListener('click', () => agitateChamber());
+
+        document.getElementById('btnEmergencyFlush').addEventListener('click', () => {
+          setValveAperture(1.0);
+          for (let i = 0; i < orbs.length; i++) {
+            const body = orbs[i];
+            if (!body.hasDrained) {
+              Matter.Body.setVelocity(body, {
+                x: (Math.random() - 0.5) * 4,
+                y: 8 + (Math.random() * 4)
+              });
+            }
+          }
+        });
+
+        // Scenario Buttons
+        const presets = [
+          { id: 'presetSustainable', key: 'sustainable' },
+          { id: 'presetBalanced', key: 'balanced' },
+          { id: 'presetDump', key: 'dump' },
+          { id: 'presetFair', key: 'fair' }
+        ];
+
+        presets.forEach(p => {
+          document.getElementById(p.id).addEventListener('click', () => {
+            applyPreset(p.key);
+            presets.forEach(other => {
+              const el = document.getElementById(other.id);
+              if (other.id === p.id) {
+                el.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-white text-slate-900 shadow-pill border border-slate-200/60 whitespace-nowrap';
+              } else {
+                el.className = 'px-3 py-1.5 text-xs font-medium rounded-lg transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60 whitespace-nowrap';
+              }
+            });
+          });
+        });
+
+        // Share Link button
+        document.getElementById('btnShareLink').addEventListener('click', exportShareableURL);
+
+        // Ledger Drawer Toggle
+        document.getElementById('btnToggleLedger').addEventListener('click', () => {
+          const sec = document.getElementById('ledgerSection');
+          sec.classList.toggle('hidden');
+          if (!sec.classList.contains('hidden')) {
+            sec.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+        document.getElementById('btnCloseLedger').addEventListener('click', () => {
+          document.getElementById('ledgerSection').classList.add('hidden');
+        });
+        document.getElementById('btnDownloadCSV').addEventListener('click', downloadLedgerCSV);
+
+        // Sound Toggle
+        document.getElementById('btnSoundToggle').addEventListener('click', () => {
+          soundEnabled = !soundEnabled;
+          const icon = document.getElementById('soundIcon');
+          if (soundEnabled) {
+            icon.className = 'fa-solid fa-volume-high text-brand-600';
+            playTone(520, 'sine', 0.1, 0.04);
+          } else {
+            icon.className = 'fa-solid fa-volume-xmark text-slate-400';
+          }
+        });
+
+        // Presentation Mode
+        document.getElementById('btnPresentation').addEventListener('click', () => {
+          state.presentationMode = !state.presentationMode;
+          const body = document.body;
+          const btn = document.getElementById('btnPresentation');
+
+          if (state.presentationMode) {
+            body.classList.add('presentation-active');
+            btn.innerHTML = '<i class="fa-solid fa-compress text-brand-600"></i><span>Exit Pitch</span>';
+            btn.classList.add('bg-brand-50', 'border-brand-300', 'text-brand-700');
+          } else {
+            body.classList.remove('presentation-active');
+            btn.innerHTML = '<i class="fa-solid fa-expand text-slate-600"></i><span>Pitch Mode</span>';
+            btn.classList.remove('bg-brand-50', 'border-brand-300', 'text-brand-700');
+          }
+
+          setTimeout(() => {
+            handleCanvasResize();
+            if (chartCirculating) chartCirculating.resize();
+            if (chartSell) chartSell.resize();
+          }, 200);
+        });
+
+        // Modal triggers
+        document.getElementById('btnExportMemo').addEventListener('click', openPitchMemoModal);
+        document.getElementById('btnCloseModal').addEventListener('click', () => {
+          document.getElementById('memoModal').classList.add('hidden');
+        });
+        document.getElementById('btnDownloadJSON').addEventListener('click', downloadMemoJSON);
+        document.getElementById('btnDownloadHTML').addEventListener('click', downloadMemoHTML);
+        document.getElementById('btnPrintMemo').addEventListener('click', prepareAndPrintReport);
+      }
+
+      // -----------------------------------------------------------------------
+      // 10. REAL-WORLD PITCH MEMO MODAL & EXPORT
+      // -----------------------------------------------------------------------
+      function openPitchMemoModal() {
+        const schedule = calculateVestingSchedule();
+        const metrics = computeMetrics(schedule);
+
+        const content = document.getElementById('memoContent');
+        content.innerHTML = `
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex justify-between items-center text-sm font-bold text-slate-900 border-b border-slate-200 pb-2">
+              <span>PROJECT EXECUTIVE SUMMARY</span>
+              <span class="text-brand-700">Health Rating: ${metrics.auditScore}/100</span>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[10px]">TOTAL SUPPLY</span>
+                <span class="text-slate-900 font-bold">${formatNumber(state.totalSupply)}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">LISTING PRICE</span>
+                <span class="text-slate-900 font-bold">$${state.price.toFixed(2)}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">INITIAL FDV</span>
+                <span class="text-brand-700 font-bold">${formatUSD(metrics.fdv)}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">DAY-1 FLOAT</span>
+                <span class="text-emerald-700 font-bold">${metrics.floatPct.toFixed(1)}% (${formatUSD(metrics.day1Cap)})</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">PEAK UNLOCK ($)</span>
+                <span class="text-amber-700 font-bold">${formatUSD(metrics.peakUnlockUSD)} (Mo. ${metrics.peakMonth})</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">MAX AMM SLIPPAGE</span>
+                <span class="text-rose-600 font-bold">${metrics.maxPriceImpact.toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <span class="text-xs font-bold text-slate-700 uppercase block tracking-wider">Cohort Allocation Matrix</span>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
+                <thead class="bg-slate-50 text-slate-600">
+                  <tr>
+                    <th class="p-2">Cohort</th>
+                    <th class="p-2">Alloc %</th>
+                    <th class="p-2">TGE %</th>
+                    <th class="p-2">Cliff</th>
+                    <th class="p-2">Vesting</th>
+                    <th class="p-2">Dump %</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                  <tr>
+                    <td class="p-2 text-amber-700 font-bold">Seed</td>
+                    <td class="p-2">${state.cohorts.seed.alloc}%</td>
+                    <td class="p-2">${state.cohorts.seed.tge}%</td>
+                    <td class="p-2">${state.cohorts.seed.cliff} mo</td>
+                    <td class="p-2">${state.cohorts.seed.vest} mo</td>
+                    <td class="p-2">${state.cohorts.seed.dumpProp}%</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 text-rose-700 font-bold">Team</td>
+                    <td class="p-2">${state.cohorts.team.alloc}%</td>
+                    <td class="p-2">${state.cohorts.team.tge}%</td>
+                    <td class="p-2">${state.cohorts.team.cliff} mo</td>
+                    <td class="p-2">${state.cohorts.team.vest} mo</td>
+                    <td class="p-2">${state.cohorts.team.dumpProp}%</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 text-emerald-700 font-bold">Staking</td>
+                    <td class="p-2">${state.cohorts.staking.alloc}%</td>
+                    <td class="p-2">${state.cohorts.staking.tge}%</td>
+                    <td class="p-2">${state.cohorts.staking.cliff} mo</td>
+                    <td class="p-2">${state.cohorts.staking.vest} mo</td>
+                    <td class="p-2">${state.cohorts.staking.dumpProp}%</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2 text-sky-700 font-bold">Public</td>
+                    <td class="p-2">${state.cohorts.public.alloc}%</td>
+                    <td class="p-2">${state.cohorts.public.tge}%</td>
+                    <td class="p-2">${state.cohorts.public.cliff} mo</td>
+                    <td class="p-2">${state.cohorts.public.vest} mo</td>
+                    <td class="p-2">${state.cohorts.public.dumpProp}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] leading-relaxed text-slate-700">
+            <span class="font-bold text-slate-900 block mb-1">AUDITOR VERDICT:</span>
+            ${metrics.auditScore >= 80 
+              ? 'Institutional-grade emission balance. Sell pressure peaks smoothly without overstretching automated market maker liquidity depth. Suitable for Tier-1 VC pitch documentation.' 
+              : 'Cautionary note: Cliff unlocks create acute liquidity drawdown spikes. Consider prolonging team/seed linear vesting duration or securing bilateral market maker support commitments.'}
+          </div>
+        `;
+
+        document.getElementById('memoModal').classList.remove('hidden');
+      }
+
+      function downloadMemoJSON() {
+        const schedule = calculateVestingSchedule();
+        const metrics = computeMetrics(schedule);
+
+        const data = {
+          title: "TokenPhysics Institutional Pitch Memo",
+          timestamp: new Date().toISOString(),
+          parameters: {
+            totalSupply: state.totalSupply,
+            listingPriceUSD: state.price,
+            seedEntryPriceUSD: state.seedEntryPrice,
+            poolDepthUSD: state.poolDepth,
+            dailyBuySupportUSD: state.dailyBuySupport,
+            cohorts: state.cohorts
+          },
+          summaryMetrics: metrics,
+          monthlySchedule: schedule
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TokenPhysics_PitchMemo_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('JSON Memo downloaded!');
+      }
+
+      function generateInstitutionalReportHTML(schedule, metrics, isFullDocument) {
+        const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const auditId = 'TP-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+
+        const milestones = [0, 3, 6, 9, 12, 18, 24, 36, 48];
+        const milestoneRows = milestones.map(m => {
+          const row = schedule[m] || schedule[schedule.length - 1];
+          return `
+            <tr style="border-bottom: 1px solid #e2e8f0; font-family: 'JetBrains Mono', monospace;">
+              <td style="padding: 7px 10px; font-weight: bold; color: #0f172a;">Month ${m}${m === 0 ? ' (TGE)' : ''}</td>
+              <td style="padding: 7px 10px; text-align: right; color: #1e293b;">${formatNumber(row.cumCirculating)}</td>
+              <td style="padding: 7px 10px; text-align: right; color: #2563eb; font-weight: bold;">${row.pctCirculating.toFixed(1)}%</td>
+              <td style="padding: 7px 10px; text-align: right; color: #0f172a;">${formatUSD(row.monthlySellUSD)}</td>
+              <td style="padding: 7px 10px; text-align: right; font-weight: bold; color: ${row.priceImpactPct > 20 ? '#e11d48' : '#059669'};">${row.priceImpactPct.toFixed(1)}%</td>
+            </tr>
+          `;
+        }).join('');
+
+        const ledgerRows = schedule.map(r => `
+          <tr style="border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; font-size: 10px;">
+            <td style="padding: 5px 8px; font-weight: 600; color: #0f172a;">M${r.month}</td>
+            <td style="padding: 5px 8px; text-align: right; color: #b45309;">${formatNumber(r.deltaSeed)}</td>
+            <td style="padding: 5px 8px; text-align: right; color: #be123c;">${formatNumber(r.deltaTeam)}</td>
+            <td style="padding: 5px 8px; text-align: right; color: #047857;">${formatNumber(r.deltaStaking)}</td>
+            <td style="padding: 5px 8px; text-align: right; color: #0369a1;">${formatNumber(r.deltaPublic)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: bold; color: #0f172a;">${formatNumber(r.totalDelta)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: bold; color: #2563eb;">${r.pctCirculating.toFixed(1)}%</td>
+            <td style="padding: 5px 8px; text-align: right; color: #334155;">${formatUSD(r.monthlySellUSD)}</td>
+            <td style="padding: 5px 8px; text-align: right; font-weight: bold; color: ${r.priceImpactPct > 20 ? '#e11d48' : '#334155'};">${r.priceImpactPct.toFixed(1)}%</td>
+          </tr>
+        `).join('');
+
+        const reportBody = `
+          <!-- Header Banner -->
+          <div style="border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="background: #2563eb; color: #ffffff; font-weight: 900; font-size: 13px; padding: 2px 7px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;">TP</span>
+                <span style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a;">TokenPhysics</span>
+                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 1px 6px; border-radius: 4px;">Institutional Due Diligence</span>
+              </div>
+              <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0 2px 0; letter-spacing: -0.02em;">INSTITUTIONAL TOKENOMICS & VESTING AUDIT MEMO</h1>
+              <p style="font-size: 11px; color: #64748b; margin: 0;">Automated Market Maker (AMM) Liquidity Stress Test, Vesting Emission Modeling & Capital Structure Audit</p>
+            </div>
+            
+            <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #475569;">
+              <div><strong>AUDIT ID:</strong> ${auditId}</div>
+              <div><strong>DATE:</strong> ${dateStr}</div>
+              <div style="margin-top: 4px;">
+                <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-weight: 700; font-size: 10px; ${metrics.auditScore >= 80 ? 'background: #dcfce7; color: #166534; border: 1px solid #86efac;' : metrics.auditScore >= 60 ? 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;' : 'background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3;'}">
+                  HEALTH SCORE: ${metrics.auditScore} / 100 (${metrics.auditScore >= 80 ? 'GRADE A // STABLE' : metrics.auditScore >= 60 ? 'GRADE B // MODERATE STRESS' : 'GRADE F // CRITICAL RISK'})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1: Executive KPI Dashboard -->
+          <div style="margin-bottom: 24px;" class="page-break-inside-avoid">
+            <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #334155; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              1. Executive Valuation & Capital Structure Summary
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Total Token Supply</span>
+                <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${formatNumber(state.totalSupply)}</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Listing Price (TGE)</span>
+                <span style="font-size: 15px; font-weight: 800; color: #059669; font-family: 'JetBrains Mono', monospace;">$${state.price.toFixed(2)}</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Seed Entry Price</span>
+                <span style="font-size: 15px; font-weight: 800; color: #b45309; font-family: 'JetBrains Mono', monospace;">$${state.seedEntryPrice.toFixed(3)} <span style="font-size: 10px; color: #166534;">(${metrics.seedMultiple.toFixed(1)}x ROI)</span></span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Fully Diluted Val (FDV)</span>
+                <span style="font-size: 15px; font-weight: 800; color: #2563eb; font-family: 'JetBrains Mono', monospace;">${formatUSD(metrics.fdv)}</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Day-1 Circulating Cap</span>
+                <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${formatUSD(metrics.day1Cap)}</span>
+                <span style="font-size: 9px; color: #2563eb; font-weight: 700; font-family: 'JetBrains Mono', monospace;">${metrics.floatPct.toFixed(1)}% Float</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Peak Monthly Unlock</span>
+                <span style="font-size: 15px; font-weight: 800; color: #b45309; font-family: 'JetBrains Mono', monospace;">${formatUSD(metrics.peakUnlockUSD)}</span>
+                <span style="font-size: 9px; color: #64748b; font-family: 'JetBrains Mono', monospace;">@ Month ${metrics.peakMonth}</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Max Single-Mo. Slippage</span>
+                <span style="font-size: 15px; font-weight: 800; color: ${metrics.maxPriceImpact > 20 ? '#be123c' : '#15803d'}; font-family: 'JetBrains Mono', monospace;">${metrics.maxPriceImpact.toFixed(1)}%</span>
+                <span style="font-size: 9px; color: #64748b;">AMM Price Impact</span>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <span style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block;">Req. Daily Volume</span>
+                <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${formatUSD(metrics.requiredDailyVolume)}</span>
+                <span style="font-size: 9px; color: #64748b;">to absorb peak drip</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Cohort Allocation Matrix Table -->
+          <div style="margin-bottom: 24px;" class="page-break-inside-avoid">
+            <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #334155; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              2. Cohort Vesting & Allocation Terms
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+              <thead>
+                <tr style="background: #f1f5f9; color: #334155; text-align: left; font-weight: 700; border-bottom: 1px solid #cbd5e1;">
+                  <th style="padding: 8px 10px;">Cohort Name</th>
+                  <th style="padding: 8px 10px; text-align: right;">Allocation %</th>
+                  <th style="padding: 8px 10px; text-align: right;">Total Tokens</th>
+                  <th style="padding: 8px 10px; text-align: right;">TGE Unlock %</th>
+                  <th style="padding: 8px 10px; text-align: right;">Cliff</th>
+                  <th style="padding: 8px 10px; text-align: right;">Vesting</th>
+                  <th style="padding: 8px 10px; text-align: right;">Monthly Drip</th>
+                  <th style="padding: 8px 10px; text-align: right;">Sell Propensity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 10px; font-weight: 700; color: #b45309;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; margin-right: 6px;"></span>Seed Investors</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.seed.alloc}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber(state.totalSupply * (state.cohorts.seed.alloc / 100))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.seed.tge}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.seed.cliff} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.seed.vest} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber((state.totalSupply * (state.cohorts.seed.alloc / 100) * (1 - state.cohorts.seed.tge / 100)) / Math.max(state.cohorts.seed.vest, 1))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: bold; color: #b45309;">${state.cohorts.seed.dumpProp}%</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0; background: #fafafa;">
+                  <td style="padding: 8px 10px; font-weight: 700; color: #be123c;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f43f5e; margin-right: 6px;"></span>Core Team & Advisors</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.team.alloc}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber(state.totalSupply * (state.cohorts.team.alloc / 100))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.team.tge}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.team.cliff} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.team.vest} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber((state.totalSupply * (state.cohorts.team.alloc / 100) * (1 - state.cohorts.team.tge / 100)) / Math.max(state.cohorts.team.vest, 1))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: bold; color: #be123c;">${state.cohorts.team.dumpProp}%</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 8px 10px; font-weight: 700; color: #047857;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; margin-right: 6px;"></span>Staking & Community</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.staking.alloc}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber(state.totalSupply * (state.cohorts.staking.alloc / 100))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.staking.tge}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.staking.cliff} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.staking.vest} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber((state.totalSupply * (state.cohorts.staking.alloc / 100) * (1 - state.cohorts.staking.tge / 100)) / Math.max(state.cohorts.staking.vest, 1))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: bold; color: #047857;">${state.cohorts.staking.dumpProp}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 10px; font-weight: 700; color: #0369a1;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #0284c7; margin-right: 6px;"></span>Public & DEX Float</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.public.alloc}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber(state.totalSupply * (state.cohorts.public.alloc / 100))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.public.tge}%</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.public.cliff} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${state.cohorts.public.vest} mo</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace;">${formatNumber((state.totalSupply * (state.cohorts.public.alloc / 100) * (1 - state.cohorts.public.tge / 100)) / Math.max(state.cohorts.public.vest, 1))}</td>
+                  <td style="padding: 8px 10px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: bold; color: #0369a1;">${state.cohorts.public.dumpProp}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 3: AMM Liquidity & Market Stress Test Analysis -->
+          <div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;" class="page-break-inside-avoid">
+            <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-top: 0; margin-bottom: 8px;">
+              3. AMM Liquidity Stress Test & Quantitative Risk Analysis
+            </h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 11px; line-height: 1.6; color: #334155;">
+              <div>
+                <p style="margin: 0 0 6px 0;"><strong>Market Capacity Parameters:</strong></p>
+                <ul style="margin: 0; padding-left: 18px;">
+                  <li>Assumed DEX Pool Depth: <strong>${formatUSD(state.poolDepth)}</strong></li>
+                  <li>Daily Organic Absorption Volume: <strong>${formatUSD(state.dailyBuySupport)} / day</strong></li>
+                  <li>Peak Unlock vs. Depth Multiple: <strong>${metrics.depthMultiple.toFixed(2)}x</strong></li>
+                  <li>Constant Product Slippage Formula: <code>ΔP / P = Δx / (x + Δx)</code></li>
+                </ul>
+              </div>
+              <div>
+                <p style="margin: 0 0 6px 0;"><strong>Auditor Risk Assessment & Verdict:</strong></p>
+                <p style="margin: 0; font-size: 10.5px; color: ${metrics.auditScore >= 80 ? '#15803d' : '#be123c'};">
+                  ${metrics.auditScore >= 80 
+                    ? '<strong>PASS (Institutional Grade):</strong> The token emission curve achieves sustainable pacing. Monthly unlock sell pressure is well balanced against projected AMM depth, keeping single-month price degradation within standard defensible thresholds (&lt; 20%).'
+                    : '<strong>CONDITIONAL STRESS DETECTED:</strong> Acute unlock spikes occur at month ' + metrics.peakMonth + ' where unlocked volume exceeds pool depth by ' + metrics.depthMultiple.toFixed(2) + 'x. Recommend extending seed/team vesting durations or securing dedicated programmatic market making commitments prior to TGE.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Key Quarterly Milestone Roadmap -->
+          <div style="margin-bottom: 24px;" class="page-break-inside-avoid">
+            <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #334155; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              4. Key Milestone Vesting Snapshot (Quarterly Progression)
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #e2e8f0;">
+              <thead>
+                <tr style="background: #f1f5f9; color: #334155; text-align: left; font-weight: 700; border-bottom: 1px solid #cbd5e1;">
+                  <th style="padding: 7px 10px;">Milestone</th>
+                  <th style="padding: 7px 10px; text-align: right;">Cumulative Tokens Unlocked</th>
+                  <th style="padding: 7px 10px; text-align: right;">Circulating Float %</th>
+                  <th style="padding: 7px 10px; text-align: right;">Monthly USD Sell Vol</th>
+                  <th style="padding: 7px 10px; text-align: right;">AMM Price Impact</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${milestoneRows}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 5: Full 48-Month Numerical Ledger -->
+          <div style="margin-bottom: 24px;" class="page-break-before">
+            <h2 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #334155; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+              5. Comprehensive 48-Month Token Vesting Ledger
+            </h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; border: 1px solid #e2e8f0;">
+              <thead>
+                <tr style="background: #f1f5f9; color: #334155; text-align: left; font-weight: 700; border-bottom: 1px solid #cbd5e1;">
+                  <th style="padding: 6px 8px;">Mo</th>
+                  <th style="padding: 6px 8px; text-align: right;">Seed</th>
+                  <th style="padding: 6px 8px; text-align: right;">Team</th>
+                  <th style="padding: 6px 8px; text-align: right;">Staking</th>
+                  <th style="padding: 6px 8px; text-align: right;">Public</th>
+                  <th style="padding: 6px 8px; text-align: right;">Total Mo.</th>
+                  <th style="padding: 6px 8px; text-align: right;">Cum. Float</th>
+                  <th style="padding: 6px 8px; text-align: right;">Sell Vol ($)</th>
+                  <th style="padding: 6px 8px; text-align: right;">Price Impact</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ledgerRows}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 6: Attestation & Due Diligence Sign-off -->
+          <div style="margin-top: 24px; border-top: 1px solid #cbd5e1; padding-top: 16px; font-size: 10px; color: #64748b;" class="page-break-inside-avoid">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; align-items: flex-end;">
+              <div>
+                <strong>METHODOLOGY & DISCLAIMER:</strong>
+                <p style="margin: 4px 0 0 0; line-height: 1.5;">
+                  This memorandum is generated via the TokenPhysics Quantitative Simulation Suite. Price impact calculations apply constant-product automated market maker invariants ($x \\cdot y = k$). Actual secondary market liquidity may vary subject to centralized exchange market making agreements, OTC block locks, and macro market conditions.
+                </p>
+              </div>
+              <div style="border-top: 1px solid #94a3b8; padding-top: 4px; text-align: center;">
+                <span style="font-weight: 700; color: #0f172a;">Lead Quantitative Architect</span><br>
+                <span>Tokenomics Review Board</span>
+              </div>
+              <div style="border-top: 1px solid #94a3b8; padding-top: 4px; text-align: center;">
+                <span style="font-weight: 700; color: #0f172a;">Managing Partner</span><br>
+                <span>Venture Committee</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (!isFullDocument) {
+          return reportBody;
+        }
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TokenPhysics Institutional Audit Memo - ${auditId}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #ffffff; color: #0f172a; margin: 0; padding: 24px; }
+    .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+    .page-break-before { break-before: page; page-break-before: always; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div style="max-width: 900px; margin: auto;">
+    ${reportBody}
+  </div>
+</body>
+</html>`;
+      }
+
+      function prepareAndPrintReport() {
+        const schedule = calculateVestingSchedule();
+        const metrics = computeMetrics(schedule);
+        const reportHtml = generateInstitutionalReportHTML(schedule, metrics, false);
+        const container = document.getElementById('printReportContainer');
+        container.innerHTML = reportHtml;
+        window.print();
+      }
+
+      function downloadMemoHTML() {
+        const schedule = calculateVestingSchedule();
+        const metrics = computeMetrics(schedule);
+        const fullHtml = generateInstitutionalReportHTML(schedule, metrics, true);
+        const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TokenPhysics_Institutional_Audit_${Date.now()}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Institutional HTML Report downloaded!');
+      }
+
+      // -----------------------------------------------------------------------
+      // 11. INITIALIZATION
+      // -----------------------------------------------------------------------
+      window.addEventListener('DOMContentLoaded', () => {
+        loadModelFromHash();
+        initCharts();
+        initPhysics();
+        bindEventListeners();
+        updateAll();
+
+        setTimeout(() => {
+          confetti({
+            particleCount: 20,
+            spread: 45,
+            origin: { y: 0.6 }
+          });
+        }, 600);
+      });
+
+    })();
+  </script>
+</body>
+</html>
