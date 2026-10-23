@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TokenPhysics — Interactive Tokenomics, Vesting Physics & Liquidity Stress Engine</title>
   
+  <!-- SEO & Social Open Graph for Twitter/X, Telegram, Discord, LinkedIn -->
+  <meta name="description" content="Real-time 2D physics simulation of token vesting emissions, constant-product AMM price impact, and liquidity drain for Web3 founders, launchpads, and crypto VCs.">
+  <meta property="og:title" content="TokenPhysics — Interactive Tokenomics & Vesting Physics Engine">
+  <meta property="og:description" content="Simulate token cohorts as physical fluid bodies in a reservoir. Model AMM slippage, liquidity drain, and generate institutional due-diligence pitch memos.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shivanshsinghchauhan.github.io/token-physics/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TokenPhysics — Interactive Tokenomics Engine">
+  <meta name="twitter:description" content="Real-time physics simulation of token vesting, AMM slippage, and liquidity drain.">
+
+  <!-- SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%232563eb'/><circle cx='50' cy='50' r='20' fill='%23ffffff'/><circle cx='25' cy='35' r='10' fill='%23f59e0b'/><circle cx='75' cy='35' r='10' fill='%23f43f5e'/><circle cx='50' cy='80' r='10' fill='%2310b981'/></svg>">
+  
   <!-- CDNs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -410,6 +423,15 @@
         </div>
 
         <div class="mt-3.5 space-y-3.5">
+          <!-- Project & Ticker Name -->
+          <div>
+            <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
+              <span>Project & Ticker Name</span>
+              <span class="text-[10px] text-slate-400">Custom Title</span>
+            </div>
+            <input type="text" id="inputProjectName" value="Protocol Nova ($NOVA)" placeholder="e.g. Protocol Nova ($NOVA)" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs font-semibold focus:bg-white focus:border-brand-500 focus:outline-none">
+          </div>
+
           <!-- Total Supply -->
           <div>
             <div class="flex justify-between items-center text-xs text-slate-700 mb-1 font-medium">
@@ -929,19 +951,29 @@
         <!-- Injected dynamically -->
       </div>
 
-      <div class="mt-4 flex items-center justify-end space-x-3">
-        <button id="btnDownloadJSON" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
-          <i class="fa-solid fa-code text-slate-500"></i>
-          <span>Export JSON</span>
-        </button>
-        <button id="btnPrintMemo" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
-          <i class="fa-solid fa-print text-slate-500"></i>
-          <span>Print / PDF</span>
-        </button>
-        <button id="btnDownloadHTML" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
-          <i class="fa-solid fa-download"></i>
-          <span>Download HTML Memo</span>
-        </button>
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center space-x-2">
+          <input type="file" id="fileInputModel" accept=".json" class="hidden">
+          <button id="btnImportJSON" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i class="fa-solid fa-file-import text-brand-600"></i>
+            <span>Import Model JSON</span>
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button id="btnDownloadJSON" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i class="fa-solid fa-code text-slate-500"></i>
+            <span>Export JSON</span>
+          </button>
+          <button id="btnPrintMemo" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i class="fa-solid fa-print text-slate-500"></i>
+            <span>Print / PDF</span>
+          </button>
+          <button id="btnDownloadHTML" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
+            <i class="fa-solid fa-download"></i>
+            <span>Download HTML Memo</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -975,6 +1007,9 @@
       // 1. STATE & MODEL PARAMETERS
       // -----------------------------------------------------------------------
       const state = {
+        // Project Identification
+        projectName: 'Protocol Nova ($NOVA)',
+
         // Valuation & Supply
         totalSupply: 1000000000,
         price: 0.50,
@@ -2345,6 +2380,52 @@
           }, 200);
         });
 
+        // Project name input
+        const inputProj = document.getElementById('inputProjectName');
+        if (inputProj) {
+          inputProj.addEventListener('input', (e) => {
+            state.projectName = e.target.value.trim() || 'Protocol Nova ($NOVA)';
+          });
+        }
+
+        // Import Model JSON
+        const btnImport = document.getElementById('btnImportJSON');
+        const fileInput = document.getElementById('fileInputModel');
+        if (btnImport && fileInput) {
+          btnImport.addEventListener('click', () => fileInput.click());
+          fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              try {
+                const parsed = JSON.parse(evt.target.result);
+                if (parsed.parameters) {
+                  if (parsed.parameters.projectName) state.projectName = parsed.parameters.projectName;
+                  if (parsed.parameters.totalSupply) state.totalSupply = parsed.parameters.totalSupply;
+                  if (parsed.parameters.listingPriceUSD) state.price = parsed.parameters.listingPriceUSD;
+                  if (parsed.parameters.seedEntryPriceUSD) state.seedEntryPrice = parsed.parameters.seedEntryPriceUSD;
+                  if (parsed.parameters.poolDepthUSD) state.poolDepth = parsed.parameters.poolDepthUSD;
+                  if (parsed.parameters.dailyBuySupportUSD) state.dailyBuySupport = parsed.parameters.dailyBuySupportUSD;
+                  if (parsed.parameters.cohorts) state.cohorts = parsed.parameters.cohorts;
+                  if (inputProj) inputProj.value = state.projectName;
+                  syncInputsWithState();
+                  updateAll();
+                  injectTokensIntoReservoir();
+                  openPitchMemoModal();
+                  showToast('Model imported successfully!');
+                } else {
+                  showToast('Invalid TokenPhysics JSON format.');
+                }
+              } catch (err) {
+                showToast('Error parsing JSON file.');
+              }
+              fileInput.value = '';
+            };
+            reader.readAsText(file);
+          });
+        }
+
         // Modal triggers
         document.getElementById('btnExportMemo').addEventListener('click', openPitchMemoModal);
         document.getElementById('btnCloseModal').addEventListener('click', () => {
@@ -2366,8 +2447,8 @@
         content.innerHTML = `
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
             <div class="flex justify-between items-center text-sm font-bold text-slate-900 border-b border-slate-200 pb-2">
-              <span>PROJECT EXECUTIVE SUMMARY</span>
-              <span class="text-brand-700">Health Rating: ${metrics.auditScore}/100</span>
+              <span class="text-brand-700 uppercase font-mono font-bold tracking-tight">${state.projectName} // EXECUTIVE SUMMARY</span>
+              <span class="text-xs font-mono font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">Health: ${metrics.auditScore}/100</span>
             </div>
             
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
@@ -2466,9 +2547,10 @@
         const metrics = computeMetrics(schedule);
 
         const data = {
-          title: "TokenPhysics Institutional Pitch Memo",
+          title: `TokenPhysics Institutional Pitch Memo - ${state.projectName}`,
           timestamp: new Date().toISOString(),
           parameters: {
+            projectName: state.projectName,
             totalSupply: state.totalSupply,
             listingPriceUSD: state.price,
             seedEntryPriceUSD: state.seedEntryPrice,
@@ -2531,7 +2613,7 @@
                 <span style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a;">TokenPhysics</span>
                 <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 1px 6px; border-radius: 4px;">Institutional Due Diligence</span>
               </div>
-              <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 4px 0 2px 0; letter-spacing: -0.02em;">INSTITUTIONAL TOKENOMICS & VESTING AUDIT MEMO</h1>
+              <h1 style="font-size: 19px; font-weight: 800; color: #0f172a; margin: 4px 0 2px 0; letter-spacing: -0.02em;">AUDIT MEMORANDUM // ${state.projectName.toUpperCase()}</h1>
               <p style="font-size: 11px; color: #64748b; margin: 0;">Automated Market Maker (AMM) Liquidity Stress Test, Vesting Emission Modeling & Capital Structure Audit</p>
             </div>
             
